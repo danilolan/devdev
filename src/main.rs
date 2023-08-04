@@ -7,6 +7,9 @@ pub const WIDTH: f32 = 1280.0;
 mod camera;
 use camera::CameraPlugin;
 
+mod scene;
+use scene::ScenePlugin;
+
 fn main() {
     App::new()
         // Window Setup
@@ -16,5 +19,6 @@ fn main() {
         
         //Plugins
         .add_plugins(CameraPlugin)
+        .add_plugins(ScenePlugin)
         .run();
 }

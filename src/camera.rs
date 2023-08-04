@@ -19,14 +19,4 @@ pub fn spawn_camera(
             ..default()  
         }
     );
-
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform::from_xyz(3.2, 4.0, 0.8),
-        ..default()
-    });
 }
