@@ -1,4 +1,6 @@
-use bevy::{prelude::*, transform, render::camera};
+use std::f32::consts::PI;
+
+use bevy::{prelude::*, transform, render::camera, input::mouse::{MouseMotion, MouseWheel}, window::PrimaryWindow};
 
 pub struct CameraPlugin;
 
@@ -7,15 +9,23 @@ impl Plugin for CameraPlugin {
         app.add_systems(Startup, spawn_player);
         app.add_systems(Startup, spawn_camera);
         app.add_systems(Update, plane_movement);
-        app.add_systems(Update, camera_movement);
+        app.add_systems(Update, orbit_mouse);
         app.add_systems(Update, sync_player_rotation);
+        app.add_systems(Update, zoom_mouse);
     }
 }
 
 #[derive(Component)]
 pub struct Player {}
 #[derive(Component)]
-pub struct Camera {}
+pub struct Camera {
+    pub focus: Vec3,
+    pub radius: f32,
+    pub mouse_sensitivity: f32,
+    pub zoom_sensitivity: f32,
+    pub zoom_bounds: (f32, f32),
+    pub button: MouseButton
+}
 
 pub fn spawn_player(
     mut commands: Commands,
@@ -86,20 +96,76 @@ pub fn spawn_camera(
             .looking_at(Vec3::ZERO, Vec3::new(0.0, 1.0, 0.0)),
             ..default()  
         },
-        Camera {}
+        Camera {
+            focus: Vec3::new(0.0,0.0,0.0),
+            mouse_sensitivity: 4.0,
+            radius: 10.0,
+            zoom_sensitivity: 1.0,
+            zoom_bounds: (10.0, 50.0),
+            button: MouseButton::Right
+        }
     ));
 }
 
-
-pub fn camera_movement(
+fn orbit_mouse(
+    window_q: Query<&Window, With<PrimaryWindow>>,
+    mut cam_q: Query<(&mut Camera, &mut Transform), With<Camera>>,
+    mut mouse_evr: EventReader<MouseMotion>,
     player_q: Query<&Transform, (With<Player>, Without<Camera>)>,
-    mut cam_q: Query<&mut Transform, With<Camera>>,
+    buttons: Res<Input<MouseButton>>,
 ) {
+    let mut rotation = Vec2::ZERO;
+    for ev in mouse_evr.iter() {
+        rotation = ev.delta;
+    }
+
+    let Ok((mut cam, mut cam_transform)) = cam_q.get_single_mut() else { return };
     let Ok(player_transform) = player_q.get_single() else { return };
-    let Ok(mut camera_transform) = cam_q.get_single_mut() else { return };
 
-    camera_transform.look_at(player_transform.translation, Vec3::Y);
+    rotation *= cam.mouse_sensitivity;
+    cam.focus = player_transform.translation;
 
-    let offset = Vec3::new(-5.0, -5.0, 5.0);
-    camera_transform.translation = player_transform.translation - offset;
-} 
+    if rotation.length_squared() > 0.0 {
+        let window = window_q.get_single().unwrap();
+        let delta_x = {
+            let delta = rotation.x / window.width() * std::f32::consts::PI;
+            delta
+        };
+
+        let delta_y = rotation.y / window.height() * PI;
+        let yaw = Quat::from_rotation_y(-delta_x);
+        let pitch = Quat::from_rotation_x(-delta_y);
+        if buttons.pressed(cam.button) {
+            println!("down");
+            cam_transform.rotation = yaw * cam_transform.rotation; // rotate around global y axis
+
+            // Calculate the new rotation without applying it to the camera yet
+            let new_rotation = cam_transform.rotation * pitch;
+
+            // check if new rotation will cause camera to go beyond the 180 degree vertical bounds
+            let up_vector = new_rotation * Vec3::Y;
+
+            if up_vector.y > 0.0 && up_vector.y < 0.99{
+                cam_transform.rotation = new_rotation;
+            }
+        }
+    
+    }
+    let rot_matrix = Mat3::from_quat(cam_transform.rotation);
+    cam_transform.translation = cam.focus + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, cam.radius));
+
+}
+
+fn zoom_mouse(mut scroll_evr: EventReader<MouseWheel>, mut cam_q: Query<&mut Camera>) {
+    let mut scroll = 0.0;
+    for ev in scroll_evr.iter() {
+        scroll += ev.y;
+    }
+
+    if let Ok(mut cam) = cam_q.get_single_mut() {
+        if scroll.abs() >= 0.0 {
+            let new_radius = cam.radius - scroll * cam.radius * 0.1 * cam.zoom_sensitivity;
+            cam.radius = new_radius.clamp(cam.zoom_bounds.0, cam.zoom_bounds.1);
+        }
+    }
+}
