@@ -3,6 +3,7 @@ use bevy::prelude::*;
 mod camera;
 use camera::CameraPlugin;
 
+const SPEED: f32 = 10.0;
 
 pub struct PlayerPlugin;
 
@@ -57,7 +58,7 @@ pub fn plane_movement(
             direction = transform.rotation.mul_vec3(direction);
         }
 
-        transform.translation +=  direction * 5.0 * time.delta_seconds();
+        transform.translation +=  direction * SPEED * time.delta_seconds();
     }
 }
 

@@ -35,7 +35,7 @@ pub fn spawn_camera(
         },
         Camera {
             focus: Vec3::new(0.0,0.0,0.0),
-            mouse_sensitivity: 4.0,
+            mouse_sensitivity: 2.0,
             radius: 10.0,
             zoom_sensitivity: 1.0,
             zoom_bounds: (10.0, 50.0),
@@ -82,7 +82,7 @@ fn orbit_mouse(
             // check if new rotation will cause camera to go beyond the 180 degree vertical bounds
             let up_vector = new_rotation * Vec3::Y;
 
-            if up_vector.y > 0.0 && up_vector.y < 0.99{
+            if up_vector.y > 0.5 && up_vector.y < 0.9{
                 cam_transform.rotation = new_rotation;
             }
         }
@@ -93,7 +93,10 @@ fn orbit_mouse(
 
 }
 
-fn zoom_mouse(mut scroll_evr: EventReader<MouseWheel>, mut cam_q: Query<&mut Camera>) {
+fn zoom_mouse(
+    mut scroll_evr: EventReader<MouseWheel>, 
+    mut cam_q: Query<&mut Camera>
+) {
     let mut scroll = 0.0;
     for ev in scroll_evr.iter() {
         scroll += ev.y;
