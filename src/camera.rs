@@ -29,17 +29,11 @@ pub struct Camera {
 
 pub fn spawn_player(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
 ){
     commands.spawn((
         Player {},
-        PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube {
-                size: 2.0
-            })),
-            material: materials.add(Color::rgb(0.8, 0.84, 0.12).into()),
-            ..default()
+        Transform {
+            ..Default::default()
         },
         Name::new("player")
     ));
