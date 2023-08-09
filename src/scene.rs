@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-
+use bevy_rapier3d::prelude::*;
 pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
@@ -19,7 +19,7 @@ pub fn spawn_scene(
             material: materials.add(Color::rgb(0.8, 0.8, 0.8).into()),
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..default()
-        }
+        },
     );
 
     commands.spawn(
@@ -31,6 +31,8 @@ pub fn spawn_scene(
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..default()
         }
+    ).insert(
+        Collider::cuboid(1.0, 1.0, 1.0),
     );
     commands.spawn(
         PbrBundle {
@@ -41,6 +43,8 @@ pub fn spawn_scene(
             transform: Transform::from_xyz(5.0, 0.0, 5.0),
             ..default()
         }
+    ).insert(
+        Collider::cuboid(1.0, 1.0, 1.0),
     );
     commands.spawn(
         PbrBundle {
@@ -51,6 +55,8 @@ pub fn spawn_scene(
             transform: Transform::from_xyz(-8.0, 0.0, 2.0),
             ..default()
         }
+    ).insert(
+        Collider::cuboid(1.0, 1.0, 1.0),
     );
 
     commands.spawn(DirectionalLightBundle{

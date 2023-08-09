@@ -1,6 +1,7 @@
 use std::f32::consts::PI;
-
 use bevy::{prelude::*, input::mouse::{MouseMotion, MouseWheel}, window::PrimaryWindow};
+use bevy::render::camera::Camera;
+use bevy_rapier3d::prelude::*;
 
 use super::Player;
 
@@ -11,11 +12,12 @@ impl Plugin for CameraPlugin {
         app.add_systems(Startup, spawn_camera);
         app.add_systems(Update, orbit_mouse);
         app.add_systems(Update, zoom_mouse);
+        app.add_systems(Update, mouse_click_world);
     }
 }
 
 #[derive(Component)]
-pub struct Camera {
+pub struct CameraDefault {
     pub focus: Vec3,
     pub radius: f32,
     pub mouse_sensitivity: f32,
@@ -33,7 +35,7 @@ pub fn spawn_camera(
             .looking_at(Vec3::ZERO, Vec3::new(0.0, 1.0, 0.0)),
             ..default()  
         },
-        Camera {
+        CameraDefault {
             focus: Vec3::new(0.0,0.0,0.0),
             mouse_sensitivity: 2.0,
             radius: 10.0,
@@ -46,9 +48,9 @@ pub fn spawn_camera(
 
 fn orbit_mouse(
     window_q: Query<&Window, With<PrimaryWindow>>,
-    mut cam_q: Query<(&mut Camera, &mut Transform), With<Camera>>,
+    mut cam_q: Query<(&mut CameraDefault, &mut Transform), With<CameraDefault>>,
     mut mouse_evr: EventReader<MouseMotion>,
-    player_q: Query<&Transform, (With<Player>, Without<Camera>)>,
+    player_q: Query<&Transform, (With<Player>, Without<CameraDefault>)>,
     buttons: Res<Input<MouseButton>>,
 ) {
     let mut rotation = Vec2::ZERO;
@@ -95,7 +97,7 @@ fn orbit_mouse(
 
 fn zoom_mouse(
     mut scroll_evr: EventReader<MouseWheel>, 
-    mut cam_q: Query<&mut Camera>
+    mut cam_q: Query<&mut CameraDefault>
 ) {
     let mut scroll = 0.0;
     for ev in scroll_evr.iter() {
@@ -108,4 +110,33 @@ fn zoom_mouse(
             cam.radius = new_radius.clamp(cam.zoom_bounds.0, cam.zoom_bounds.1);
         }
     }
+}
+
+fn mouse_click_world(
+    buttons: Res<Input<MouseButton>>,
+    q_windows: Query<&Window, With<PrimaryWindow>>,
+    cam_q: Query<(&Camera, &GlobalTransform), With<CameraDefault>>,
+    rapier_context: Res<RapierContext>
+) {
+    if !buttons.just_pressed(MouseButton::Left) {return;}
+    if let Some(position) = q_windows.single().cursor_position() {
+        let Ok((camera, camera_transform)) = cam_q.get_single() else { return };
+        let ray_option = camera.viewport_to_world(camera_transform, position);
+    
+        if let Some(ray) = ray_option {
+            let ray_pos = ray.origin;
+            let ray_dir = ray.direction;
+            let max_toi = 100.0;
+            let solid = true;
+            let filter: QueryFilter = Default::default();
+        
+            if let Some((entity, toi)) = rapier_context.cast_ray(
+                ray_pos, ray_dir, max_toi, solid, filter
+            )  {
+                let hit_point = ray_pos + ray_dir * toi;
+                println!("Entity {:?} hit at point {}", entity, hit_point);
+            }  
+        }
+    }
+
 }
