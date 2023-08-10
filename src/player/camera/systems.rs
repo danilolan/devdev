@@ -1,30 +1,10 @@
-use std::f32::consts::PI;
 use bevy::{prelude::*, input::mouse::{MouseMotion, MouseWheel}, window::PrimaryWindow};
 use bevy::render::camera::Camera;
 use bevy_rapier3d::prelude::*;
+use super::super::Player;
+use std::f32::consts::PI;
 
-use super::Player;
-
-pub struct CameraPlugin;
-
-impl Plugin for CameraPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_camera);
-        app.add_systems(Update, orbit_mouse);
-        app.add_systems(Update, zoom_mouse);
-        app.add_systems(Update, mouse_click_world);
-    }
-}
-
-#[derive(Component)]
-pub struct CameraDefault {
-    pub focus: Vec3,
-    pub radius: f32,
-    pub mouse_sensitivity: f32,
-    pub zoom_sensitivity: f32,
-    pub zoom_bounds: (f32, f32),
-    pub button: MouseButton
-}
+use super::components::*;
 
 pub fn spawn_camera(
     mut commands: Commands
@@ -46,7 +26,7 @@ pub fn spawn_camera(
     ));
 }
 
-fn orbit_mouse(
+pub fn orbit_mouse(
     window_q: Query<&Window, With<PrimaryWindow>>,
     mut cam_q: Query<(&mut CameraDefault, &mut Transform), With<CameraDefault>>,
     mut mouse_evr: EventReader<MouseMotion>,
@@ -95,7 +75,7 @@ fn orbit_mouse(
 
 }
 
-fn zoom_mouse(
+pub fn zoom_mouse(
     mut scroll_evr: EventReader<MouseWheel>, 
     mut cam_q: Query<&mut CameraDefault>
 ) {
@@ -112,7 +92,7 @@ fn zoom_mouse(
     }
 }
 
-fn mouse_click_world(
+pub fn mouse_click_world(
     buttons: Res<Input<MouseButton>>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
     cam_q: Query<(&Camera, &GlobalTransform), With<CameraDefault>>,
@@ -138,5 +118,4 @@ fn mouse_click_world(
             }  
         }
     }
-
 }
