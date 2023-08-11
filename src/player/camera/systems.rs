@@ -99,7 +99,7 @@ pub fn mouse_click_world(
     q_windows: Query<&Window, With<PrimaryWindow>>,
     cam_q: Query<(&Camera, &GlobalTransform), With<CameraDefault>>,
     rapier_context: Res<RapierContext>,
-    mut query_objects: Query<(Entity, &mut PopupState)>,
+    query_objects: Query<(Entity, &mut PopupState)>,
 ) {
     if !buttons.just_pressed(MouseButton::Left) {return;}
     if let Some(position) = q_windows.single().cursor_position() {
@@ -113,13 +113,30 @@ pub fn mouse_click_world(
             let solid = true;
             let filter: QueryFilter = Default::default();
         
-            if let Some((entity, toi)) = rapier_context.cast_ray(
-                ray_pos, ray_dir, max_toi, solid, filter
-            )  {
-                if let Ok((entity, mut popup_state)) = query_objects.get_mut(entity) {
-                   popup_state.isOpen = true;
-                }
-            }  
+            let ray_result = rapier_context.cast_ray(ray_pos, ray_dir, max_toi, solid, filter);
+
+            handle_ray_result(ray_result, query_objects);  
+        }
+    }
+}
+
+fn handle_ray_result(
+    ray_result: Option<(Entity, f32)>,
+    mut query_objects: Query<(Entity, &mut PopupState)>,
+) {
+    if let Some((entity, _)) = ray_result  {
+        for (query_entity ,mut popup_state) in query_objects.iter_mut() {
+            if entity == query_entity {
+                popup_state.is_open = true;
+            }
+            else {
+                popup_state.is_open = false;
+            }
+        }
+    }  
+    else {
+        for (_ ,mut popup_state) in query_objects.iter_mut() {
+            popup_state.is_open = false;
         }
     }
 }

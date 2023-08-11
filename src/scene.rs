@@ -22,43 +22,6 @@ pub fn spawn_scene(
         },
     );
 
-    commands.spawn(
-        PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube {
-                size: 2.0
-            })),
-            material: materials.add(Color::rgb(0.1, 0.84, 0.92).into()),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
-            ..default()
-        }
-    ).insert(
-        Collider::cuboid(1.0, 1.0, 1.0),
-    );
-    commands.spawn(
-        PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube {
-                size: 2.0
-            })),
-            material: materials.add(Color::rgb(0.1, 0.14, 0.92).into()),
-            transform: Transform::from_xyz(5.0, 0.0, 5.0),
-            ..default()
-        }
-    ).insert(
-        Collider::cuboid(1.0, 1.0, 1.0),
-    );
-    commands.spawn(
-        PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube {
-                size: 2.0
-            })),
-            material: materials.add(Color::rgb(0.8, 0.84, 0.12).into()),
-            transform: Transform::from_xyz(-8.0, 0.0, 2.0),
-            ..default()
-        }
-    ).insert(
-        Collider::cuboid(1.0, 1.0, 1.0),
-    );
-
     commands.spawn(DirectionalLightBundle{
         directional_light: DirectionalLight{
             shadows_enabled: true,

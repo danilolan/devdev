@@ -10,7 +10,7 @@ pub struct ObjectsPlugin;
 
 impl Plugin for ObjectsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_object);
+        app.add_systems(Startup, spawn_objects);
 
         app.add_systems(Update, handle_popup_state);
     }

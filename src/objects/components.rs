@@ -8,5 +8,5 @@ pub struct Object {
 }
 #[derive(Component)]
 pub struct PopupState {
-    pub isOpen: bool
+    pub is_open: bool
 }
