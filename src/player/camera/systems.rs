@@ -1,7 +1,9 @@
 use bevy::{prelude::*, input::mouse::{MouseMotion, MouseWheel}, window::PrimaryWindow};
 use bevy::render::camera::Camera;
 use bevy_rapier3d::prelude::*;
+
 use super::super::Player;
+use crate::objects::components::*;
 use std::f32::consts::PI;
 
 use super::components::*;
@@ -96,7 +98,8 @@ pub fn mouse_click_world(
     buttons: Res<Input<MouseButton>>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
     cam_q: Query<(&Camera, &GlobalTransform), With<CameraDefault>>,
-    rapier_context: Res<RapierContext>
+    rapier_context: Res<RapierContext>,
+    mut query_objects: Query<(Entity, &mut PopupState)>,
 ) {
     if !buttons.just_pressed(MouseButton::Left) {return;}
     if let Some(position) = q_windows.single().cursor_position() {
@@ -113,8 +116,9 @@ pub fn mouse_click_world(
             if let Some((entity, toi)) = rapier_context.cast_ray(
                 ray_pos, ray_dir, max_toi, solid, filter
             )  {
-                let hit_point = ray_pos + ray_dir * toi;
-                println!("Entity {:?} hit at point {}", entity, hit_point);
+                if let Ok((entity, mut popup_state)) = query_objects.get_mut(entity) {
+                   popup_state.isOpen = true;
+                }
             }  
         }
     }

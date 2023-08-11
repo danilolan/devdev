@@ -11,6 +11,9 @@ use player::PlayerPlugin;
 mod scene;
 use scene::ScenePlugin;
 
+mod objects;
+use objects::ObjectsPlugin;
+
 fn main() {
     App::new()
         // Window Setup
@@ -22,5 +25,6 @@ fn main() {
         //Plugins
         .add_plugins(PlayerPlugin)
         .add_plugins(ScenePlugin)
+        .add_plugins(ObjectsPlugin)
         .run();
 }
