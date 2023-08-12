@@ -1,13 +1,34 @@
-use bevy::{prelude::*, input::mouse::{MouseMotion, MouseWheel}, window::PrimaryWindow};
+use bevy::prelude::*;
+use bevy::{input::mouse::{MouseMotion, MouseWheel}, window::PrimaryWindow};
 use bevy::render::camera::Camera;
 use bevy_rapier3d::prelude::*;
 
-use super::super::Player;
-use crate::objects::components::*;
+use super::Player;
 use std::f32::consts::PI;
 
-use super::components::*;
+pub struct CameraPlugin;
 
+impl Plugin for CameraPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, spawn_camera);
+        app.add_systems(Update, orbit_mouse);
+        app.add_systems(Update, zoom_mouse);
+        app.add_systems(Update, mouse_click_world);
+    }
+}
+
+//Components
+#[derive(Component)]
+pub struct CameraDefault {
+    pub focus: Vec3,
+    pub radius: f32,
+    pub mouse_sensitivity: f32,
+    pub zoom_sensitivity: f32,
+    pub zoom_bounds: (f32, f32),
+    pub button: MouseButton
+}
+
+//Systems
 pub fn spawn_camera(
     mut commands: Commands
 ){
@@ -99,7 +120,7 @@ pub fn mouse_click_world(
     q_windows: Query<&Window, With<PrimaryWindow>>,
     cam_q: Query<(&Camera, &GlobalTransform), With<CameraDefault>>,
     rapier_context: Res<RapierContext>,
-    query_objects: Query<(Entity, &mut PopupState)>,
+    query_objects: Query<(Entity)>,
 ) {
     if !buttons.just_pressed(MouseButton::Left) {return;}
     if let Some(position) = q_windows.single().cursor_position() {
@@ -122,21 +143,21 @@ pub fn mouse_click_world(
 
 fn handle_ray_result(
     ray_result: Option<(Entity, f32)>,
-    mut query_objects: Query<(Entity, &mut PopupState)>,
+    mut query_objects: Query<(Entity)>,
 ) {
     if let Some((entity, _)) = ray_result  {
-        for (query_entity ,mut popup_state) in query_objects.iter_mut() {
+        /*for (query_entity ,mut popup_state) in query_objects.iter_mut() {
             if entity == query_entity {
                 popup_state.is_open = true;
             }
             else {
                 popup_state.is_open = false;
             }
-        }
+        }*/
     }  
     else {
-        for (_ ,mut popup_state) in query_objects.iter_mut() {
+        /*for (_ ,mut popup_state) in query_objects.iter_mut() {
             popup_state.is_open = false;
-        }
+        }*/
     }
 }

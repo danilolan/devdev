@@ -5,14 +5,11 @@ use bevy_rapier3d::prelude::*;
 pub const HEIGHT: f32 = 720.0;
 pub const WIDTH: f32 = 1280.0;
 
-mod player;
-use player::PlayerPlugin;
+mod player_interaction;
+use player_interaction::PlayerPlugin;
 
 mod scene;
 use scene::ScenePlugin;
-
-mod objects;
-use objects::ObjectsPlugin;
 
 fn main() {
     App::new()
@@ -25,6 +22,5 @@ fn main() {
         //Plugins
         .add_plugins(PlayerPlugin)
         .add_plugins(ScenePlugin)
-        .add_plugins(ObjectsPlugin)
         .run();
 }

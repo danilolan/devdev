@@ -1,7 +1,26 @@
-
 use bevy::prelude::*;
-use super::components::*;
 
+mod camera;
+use camera::CameraPlugin;
+
+pub struct PlayerPlugin;
+
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, spawn_player);
+        app.add_systems(Update, plane_movement);
+        app.add_systems(Update, sync_player_rotation);
+
+        app.add_plugins(CameraPlugin);
+    }
+}
+
+//Components
+#[derive(Component)]
+pub struct Player {}
+
+
+//Systems
 const SPEED: f32 = 10.0;
 
 pub fn spawn_player(

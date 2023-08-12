@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_rapier3d::prelude::*;
 pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
