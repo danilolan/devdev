@@ -6,7 +6,10 @@ pub const HEIGHT: f32 = 720.0;
 pub const WIDTH: f32 = 1280.0;
 
 mod player_interaction;
-use player_interaction::PlayerPlugin;
+use player_interaction::PlayerInteractionPlugin;
+
+mod world;
+use world::WorldPlugin;
 
 mod scene;
 use scene::ScenePlugin;
@@ -20,7 +23,8 @@ fn main() {
         .add_plugins(WorldInspectorPlugin::new())
         
         //Plugins
-        .add_plugins(PlayerPlugin)
+        .add_plugins(PlayerInteractionPlugin)
+        .add_plugins(WorldPlugin)
         .add_plugins(ScenePlugin)
         .run();
 }
