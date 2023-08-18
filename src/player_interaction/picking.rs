@@ -66,12 +66,12 @@ fn update_picking(
   let filter: QueryFilter = Default::default();
 
   match rapier_context.cast_ray(ray_pos, ray_dir, max_toi, solid, filter) {
-      Some((entity, toi)) => {
-          let hit_position = ray_pos + ray_dir * toi;
-          picking.set(Some(hit_position), Some(entity));
-      }
-      None => {
-          picking.set(None, None);
-      }
+    Some((entity, toi)) => {
+      let hit_position = ray_pos + ray_dir * toi;
+      picking.set(Some(hit_position), Some(entity));
+    }
+    None => {
+      picking.set(None, None);
+    }
   }
 }
