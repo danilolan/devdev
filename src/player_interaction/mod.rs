@@ -2,6 +2,8 @@ use bevy::prelude::*;
 
 mod camera;
 use camera::CameraPlugin;
+mod picking;
+use picking::PickingPlugin;
 
 pub struct PlayerInteractionPlugin;
 
@@ -11,7 +13,9 @@ impl Plugin for PlayerInteractionPlugin {
         app.add_systems(Update, plane_movement);
         app.add_systems(Update, sync_player_rotation);
 
+        //plugins
         app.add_plugins(CameraPlugin);
+        app.add_plugins(PickingPlugin);
     }
 }
 

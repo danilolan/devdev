@@ -13,7 +13,6 @@ impl Plugin for CameraPlugin {
         app.add_systems(Startup, spawn_camera);
         app.add_systems(Update, orbit_mouse);
         app.add_systems(Update, zoom_mouse);
-        app.add_systems(Update, mouse_click_world);
     }
 }
 
@@ -112,52 +111,5 @@ pub fn zoom_mouse(
             let new_radius = cam.radius - scroll * cam.radius * 0.1 * cam.zoom_sensitivity;
             cam.radius = new_radius.clamp(cam.zoom_bounds.0, cam.zoom_bounds.1);
         }
-    }
-}
-
-pub fn mouse_click_world(
-    buttons: Res<Input<MouseButton>>,
-    q_windows: Query<&Window, With<PrimaryWindow>>,
-    cam_q: Query<(&Camera, &GlobalTransform), With<CameraDefault>>,
-    rapier_context: Res<RapierContext>,
-    query_objects: Query<(Entity)>,
-) {
-    if !buttons.just_pressed(MouseButton::Left) {return;}
-    if let Some(position) = q_windows.single().cursor_position() {
-        let Ok((camera, camera_transform)) = cam_q.get_single() else { return };
-        let ray_option = camera.viewport_to_world(camera_transform, position);
-    
-        if let Some(ray) = ray_option {
-            let ray_pos = ray.origin;
-            let ray_dir = ray.direction;
-            let max_toi = 100.0;
-            let solid = true;
-            let filter: QueryFilter = Default::default();
-        
-            let ray_result = rapier_context.cast_ray(ray_pos, ray_dir, max_toi, solid, filter);
-
-            handle_ray_result(ray_result, query_objects);  
-        }
-    }
-}
-
-fn handle_ray_result(
-    ray_result: Option<(Entity, f32)>,
-    mut query_objects: Query<(Entity)>,
-) {
-    if let Some((entity, _)) = ray_result  {
-        /*for (query_entity ,mut popup_state) in query_objects.iter_mut() {
-            if entity == query_entity {
-                popup_state.is_open = true;
-            }
-            else {
-                popup_state.is_open = false;
-            }
-        }*/
-    }  
-    else {
-        /*for (_ ,mut popup_state) in query_objects.iter_mut() {
-            popup_state.is_open = false;
-        }*/
     }
 }
