@@ -25,7 +25,7 @@ pub fn spawn_scene(
     commands.spawn(
         PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube::from(shape::Cube { size: 2.0 }))),
-            material: materials.add(Color::rgb(0.8, 0.8, 0.8).into()),
+            material: materials.add(Color::rgb(0.2, 0.8, 0.8).into()),
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..default()
         }

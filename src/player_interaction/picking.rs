@@ -1,5 +1,5 @@
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_rapier3d::prelude::{RapierContext, QueryFilter};
+use bevy_rapier3d::{prelude::{RapierContext, QueryFilter, Collider}, na::Rotation};
 
 use crate::player_interaction::camera::CameraDefault;
 
@@ -12,6 +12,7 @@ impl Plugin for PickingPlugin {
 
     //systems
     app.add_systems(Update, update_picking);
+    app.add_systems(Update, show_colliders);
   }
 }
 
@@ -73,5 +74,21 @@ fn update_picking(
     None => {
       picking.set(None, None);
     }
+  }
+}
+
+const SHOW_COLLIDER: bool = true;
+
+fn show_colliders(
+  colliders_q: Query<(&Transform, &Collider), With<Collider>>,
+  mut gizmos: Gizmos,
+) {
+  if !SHOW_COLLIDER {return;}
+
+  for (transform, collider) in colliders_q.iter() {
+    let cubo = collider.as_cuboid().unwrap();
+    let size = Vec3::new(cubo.raw.half_extents[0] * 2.0, cubo.raw.half_extents[1] * 2.0, cubo.raw.half_extents[2] * 2.0);
+    let transform_point = Transform::from_translation(transform.translation).with_scale(size);
+    gizmos.cuboid(transform_point, Color::GREEN);
   }
 }
