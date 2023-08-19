@@ -8,7 +8,7 @@ pub struct PickingPlugin;
 impl Plugin for PickingPlugin {
   fn build(&self, app: &mut App) {
     //resources
-    app.init_resource::<Picking>();
+    app.init_resource::<PickingData>();
 
     //systems
     app.add_systems(Update, update_picking);
@@ -19,31 +19,34 @@ impl Plugin for PickingPlugin {
 //----resource----
 #[derive(Resource)]
 #[derive(Clone)]
-struct Picking {
-  hit_position: Option<Vec3>,
-  entity: Option<Entity>
+pub struct PickingData {
+  pub hit_position: Option<Vec3>,
+  hit_position_ground: Option<Vec3>,
+  pub entity: Option<Entity>
 }
 
-impl Default for Picking {
+impl Default for PickingData {
   fn default() -> Self {
-    Picking {
+    PickingData {
       hit_position: None,
+      hit_position_ground: None,
       entity: None
     }
   }
 
 }
 
-impl Picking {
-  fn set(&mut self, hit_position: Option<Vec3>,entity: Option<Entity>) {
+impl PickingData {
+  fn set(&mut self, hit_position: Option<Vec3>, hit_position_ground: Option<Vec3>,entity: Option<Entity>) {
     self.hit_position = hit_position;
     self.entity = entity;
+    self.hit_position_ground = hit_position_ground;
   }
 }
 
 //----systems----
 fn update_picking(
-  mut picking: ResMut<Picking>,
+  mut picking: ResMut<PickingData>,
   q_windows: Query<&Window, With<PrimaryWindow>>,
   cam_q: Query<(&Camera, &GlobalTransform), With<CameraDefault>>,
   rapier_context: Res<RapierContext>,
@@ -66,13 +69,17 @@ fn update_picking(
   let solid = true;
   let filter: QueryFilter = Default::default();
 
+  //get the point that the ray hit the plane Y
+  let t = -ray_pos.y / ray_dir.y;
+  let hit_position_ground = ray_pos + t * ray_dir;
+
   match rapier_context.cast_ray(ray_pos, ray_dir, max_toi, solid, filter) {
     Some((entity, toi)) => {
       let hit_position = ray_pos + ray_dir * toi;
-      picking.set(Some(hit_position), Some(entity));
+      picking.set(Some(hit_position),Some(hit_position_ground), Some(entity));
     }
     None => {
-      picking.set(None, None);
+      picking.set(None, Some(hit_position_ground), None);
     }
   }
 }
