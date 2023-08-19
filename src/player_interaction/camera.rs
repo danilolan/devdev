@@ -1,7 +1,5 @@
 use bevy::prelude::*;
 use bevy::{input::mouse::{MouseMotion, MouseWheel}, window::PrimaryWindow};
-use bevy::render::camera::Camera;
-use bevy_rapier3d::prelude::*;
 
 use super::Player;
 use std::f32::consts::PI;

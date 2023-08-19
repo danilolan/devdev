@@ -21,7 +21,7 @@ impl Plugin for PickingPlugin {
 #[derive(Clone)]
 pub struct PickingData {
   pub hit_position: Option<Vec3>,
-  hit_position_ground: Option<Vec3>,
+  pub hit_position_ground: Option<Vec3>,
   pub entity: Option<Entity>
 }
 
@@ -37,7 +37,7 @@ impl Default for PickingData {
 }
 
 impl PickingData {
-  fn set(&mut self, hit_position: Option<Vec3>, hit_position_ground: Option<Vec3>,entity: Option<Entity>) {
+  pub fn set(&mut self, hit_position: Option<Vec3>, hit_position_ground: Option<Vec3>,entity: Option<Entity>) {
     self.hit_position = hit_position;
     self.entity = entity;
     self.hit_position_ground = hit_position_ground;
@@ -84,7 +84,7 @@ fn update_picking(
   }
 }
 
-const SHOW_COLLIDER: bool = true;
+const SHOW_COLLIDER: bool = false;
 
 fn show_colliders(
   colliders_q: Query<(&Transform, &Collider), With<Collider>>,

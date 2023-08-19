@@ -1,9 +1,11 @@
 use bevy::prelude::*;
 
-mod camera;
+pub mod camera;
 use camera::CameraPlugin;
-mod picking;
+pub mod picking;
 use picking::PickingPlugin;
+pub mod selection;
+use selection::SelectionPlugin;
 
 pub struct PlayerInteractionPlugin;
 
@@ -16,6 +18,7 @@ impl Plugin for PlayerInteractionPlugin {
         //plugins
         app.add_plugins(CameraPlugin);
         app.add_plugins(PickingPlugin);
+        app.add_plugins(SelectionPlugin);
     }
 }
 
