@@ -1,3 +1,5 @@
+use crate::world::LerpMovement;
+
 use super::picking::PickingData;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::Collider;
@@ -26,7 +28,7 @@ impl Default for ObjectToolData {
     fn default() -> Self {
         ObjectToolData {
             entity: None,
-            grid_size: None,
+            grid_size: Some(0.1),
         }
     }
 }
@@ -34,16 +36,16 @@ impl Default for ObjectToolData {
 fn handle_object(
     picking: Res<PickingData>,
     object_tool_data: ResMut<ObjectToolData>,
-    mut global_query: Query<(&mut Transform,)>,
+    mut global_query: Query<(&mut LerpMovement,)>,
 ) {
     if let Some(entity) = object_tool_data.entity {
         let hit_point = picking.hit_position_ground.unwrap_or_default();
-        if let Ok((mut transform,)) = global_query.get_mut(entity) {
-            let position = match object_tool_data.grid_size {
+        if let Ok((mut lerp_movement,)) = global_query.get_mut(entity) {
+            let position: Vec3 = match object_tool_data.grid_size {
                 Some(grid_size) => (hit_point / grid_size).round() * grid_size,
                 None => hit_point,
             };
-            transform.translation = position;
+            lerp_movement.set_target(position);
         }
     }
 }
@@ -70,6 +72,11 @@ fn test(
                 ..default()
             })
             .insert(Collider::cuboid(1.0, 1.0, 1.0))
+            .insert(LerpMovement {
+                target_position: Vec3::new(5.0, 5.0, 5.0),
+                current_position: Vec3::new(0.0, 0.0, 0.0),
+                speed: 10.0,
+            })
             .id();
         object_tool_data.entity = Some(entity);
     }
