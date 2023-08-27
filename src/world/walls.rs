@@ -45,7 +45,7 @@ fn start_wall(
     for point in points {}
     let mesh = add_wall(
         Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(10.0, 0.0, 5.0),
+        Vec3::new(10.0, 0.0, 10.0),
         1.0,
         2.0,
         res_mesh,
@@ -168,6 +168,7 @@ fn calc_wall_points(start: Vec3, end: Vec3, size: f32, height: f32) -> [Vec3; 8]
             point_right_end.z,
         ),
     ];
+    println!("direction {:?}", direction);
     println!("{:?}", points);
 
     return points;
@@ -176,7 +177,7 @@ fn calc_wall_points(start: Vec3, end: Vec3, size: f32, height: f32) -> [Vec3; 8]
 fn calc_perpendicular_points(point: Vec3, direction: Vec3, size: f32) -> (Vec3, Vec3) {
     let direction_normalized = direction.normalize();
 
-    let perpendicular = Vec2::new(-direction_normalized.y, direction_normalized.x);
+    let perpendicular = Vec2::new(-direction_normalized.z, direction_normalized.x);
     let perpendicular_point = Vec3::new(
         ((size / 2.0) * perpendicular).x,
         0.0,
