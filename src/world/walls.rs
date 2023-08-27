@@ -30,31 +30,39 @@ impl Default for WallPoints {
 #[derive(Component)]
 struct WallMesh {}
 
+const SIZE: f32 = 1.0;
+const HEIGHT: f32 = 2.0;
+
 //----systems----
 fn start_wall(
     mut commands: Commands,
-    gizmos: Gizmos,
+    grid: Res<Grid>,
     mut res_mesh: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let points = [
-        [Vec3::new(0.0, 0.0, 0.0), Vec3::new(10.0, 0.0, 0.0)],
-        [Vec3::new(10.0, 0.0, 0.0), Vec3::new(10.0, 0.0, 10.0)],
-    ];
+    let points: Vec<[i32; 2]> = vec![[0, 0], [10, 0], [10, 10], [0, -10], [5, 5], [10, 20]];
+    let mut points_connected: Vec<[usize; 2]> = Vec::new();
 
     let mut builder = MeshBuilder::new();
 
-    for point in points {
-        //create_wall(point[0], point[1], 1.0, 2.0, &mut builder);
-    }
+    for (index, &point) in points.iter().enumerate() {
+        let adjacent_points = find_adjacent_points(&points, point);
 
-    create_pillar(
-        Vec3::new(0.0, 0.0, 0.0),
-        [true, false, true, true],
-        1.0,
-        2.0,
-        &mut builder,
-    );
+        for adjacent_index in adjacent_points.iter().filter_map(|&option| option) {
+            if !points_connected.contains(&[index, adjacent_index])
+                || !points_connected.contains(&[index, adjacent_index])
+            {
+                let start = grid.coord_to_tile(points[index]);
+                let end = grid.coord_to_tile(points[adjacent_index]);
+                create_wall(start, end, SIZE, HEIGHT, &mut builder);
+
+                points_connected.push([index, adjacent_index])
+            }
+        }
+
+        let pillar_position = grid.coord_to_tile(point);
+        create_pillar(pillar_position, adjacent_points, SIZE, HEIGHT, &mut builder);
+    }
 
     let mesh = builder.build();
     let mesh_handle = res_mesh.add(mesh);
@@ -118,6 +126,31 @@ impl MeshBuilder {
     }
 }
 
+fn find_adjacent_points(points: &Vec<[i32; 2]>, current_point: [i32; 2]) -> [Option<usize>; 4] {
+    let mut result = [None, None, None, None];
+
+    for (index, &point) in points.iter().enumerate() {
+        // Para cima
+        if point == [current_point[0], current_point[1] + 10] {
+            result[1] = Some(index);
+        }
+        // Para a cima
+        if point == [current_point[0] + 10, current_point[1]] {
+            result[0] = Some(index);
+        }
+        // Para baixo
+        if point == [current_point[0], current_point[1] - 10] {
+            result[3] = Some(index);
+        }
+        // Para a baixo
+        if point == [current_point[0] - 10, current_point[1]] {
+            result[2] = Some(index);
+        }
+    }
+
+    result
+}
+
 pub fn create_wall(start: Vec3, end: Vec3, size: f32, height: f32, builder: &mut MeshBuilder) {
     let points = calc_wall_points(start, end, size, height);
 
@@ -129,7 +162,7 @@ pub fn create_wall(start: Vec3, end: Vec3, size: f32, height: f32, builder: &mut
 
 pub fn create_pillar(
     position: Vec3,
-    fill_sides: [bool; 4],
+    sides_connected: [Option<usize>; 4],
     size: f32,
     height: f32,
     builder: &mut MeshBuilder,
@@ -139,16 +172,16 @@ pub fn create_pillar(
     // Adicionando o primeiro quadrado
     builder.add_square(points[1], points[5], points[7], points[3]);
 
-    if fill_sides[0] {
+    if !sides_connected[0].is_some() {
         builder.add_square(points[0], points[1], points[3], points[2]);
     }
-    if fill_sides[1] {
+    if !sides_connected[1].is_some() {
         builder.add_square(points[2], points[3], points[7], points[6]);
     }
-    if fill_sides[2] {
+    if !sides_connected[2].is_some() {
         builder.add_square(points[5], points[4], points[6], points[7]);
     }
-    if fill_sides[3] {
+    if !sides_connected[3].is_some() {
         builder.add_square(points[1], points[0], points[4], points[5]);
     }
 }
