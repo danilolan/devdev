@@ -14,7 +14,7 @@ impl Plugin for SelectionPlugin {
         //systems
         app.add_systems(Update, handle_object);
         app.add_systems(Update, place_object);
-        app.add_systems(Update, test);
+        //app.add_systems(Update, test);
     }
 }
 

@@ -42,24 +42,32 @@ fn start_wall(
         [Vec3::new(10.0, 0.0, 0.0), Vec3::new(10.0, 0.0, 10.0)],
     ];
 
-    for point in points {}
-    let mesh = add_wall(
+    let mut builder = MeshBuilder::new();
+
+    for point in points {
+        //create_wall(point[0], point[1], 1.0, 2.0, &mut builder);
+    }
+
+    create_pillar(
         Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(10.0, 0.0, 10.0),
+        [true, false, true, true],
         1.0,
         2.0,
-        res_mesh,
+        &mut builder,
     );
+
+    let mesh = builder.build();
+    let mesh_handle = res_mesh.add(mesh);
 
     let material = materials.add(Color::rgb(0.2, 0.2, 0.2).into());
     commands.spawn(PbrBundle {
-        mesh,
+        mesh: mesh_handle,
         material,
         ..Default::default()
     });
 }
 
-struct MeshBuilder {
+pub struct MeshBuilder {
     vertices: Vec<Vec3>,
     indices: Vec<u32>,
     normals: Vec<Vec3>,
@@ -110,28 +118,79 @@ impl MeshBuilder {
     }
 }
 
-pub fn add_wall(
-    start: Vec3,
-    end: Vec3,
-    size: f32,
-    height: f32,
-    mut meshes: ResMut<Assets<Mesh>>,
-) -> Handle<Mesh> {
+pub fn create_wall(start: Vec3, end: Vec3, size: f32, height: f32, builder: &mut MeshBuilder) {
     let points = calc_wall_points(start, end, size, height);
-    let indices = [0, 1, 5, 0, 5, 4, 2, 3, 6, 2, 6, 7, 1, 3, 6, 1, 6, 5];
-
-    let mut builder = MeshBuilder::new();
 
     // Adicionando o primeiro quadrado
     builder.add_square(points[6], points[7], points[3], points[2]);
     builder.add_square(points[1], points[3], points[7], points[5]);
     builder.add_square(points[0], points[1], points[5], points[4]);
+}
 
-    let mesh = builder.build();
+pub fn create_pillar(
+    position: Vec3,
+    fill_sides: [bool; 4],
+    size: f32,
+    height: f32,
+    builder: &mut MeshBuilder,
+) {
+    let points = calc_pillar_points(position, size, height);
 
-    let mesh_handle = meshes.add(mesh);
+    // Adicionando o primeiro quadrado
+    builder.add_square(points[1], points[5], points[7], points[3]);
 
-    mesh_handle
+    if fill_sides[0] {
+        builder.add_square(points[0], points[1], points[3], points[2]);
+    }
+    if fill_sides[1] {
+        builder.add_square(points[2], points[3], points[7], points[6]);
+    }
+    if fill_sides[2] {
+        builder.add_square(points[5], points[4], points[6], points[7]);
+    }
+    if fill_sides[3] {
+        builder.add_square(points[1], points[0], points[4], points[5]);
+    }
+}
+
+fn calc_pillar_points(position: Vec3, size: f32, height: f32) -> [Vec3; 8] {
+    let direction = Vec3::X;
+    //find perpendicular points
+    let start = Vec3::new(position.x + (size / 4.0), position.y, position.z);
+    let end = Vec3::new(position.x - (size / 4.0), position.y, position.z);
+    let (point_left_start, point_right_start) =
+        calc_perpendicular_points(start, direction, (size / 2.0));
+    let (point_left_end, point_right_end) = calc_perpendicular_points(end, direction, (size / 2.0));
+
+    //create points vector with defined order
+    let points = [
+        point_left_start,
+        Vec3::new(
+            point_left_start.x,
+            point_left_start.y + height,
+            point_left_start.z,
+        ),
+        point_right_start,
+        Vec3::new(
+            point_right_start.x,
+            point_right_start.y + height,
+            point_right_start.z,
+        ),
+        point_left_end,
+        Vec3::new(
+            point_left_end.x,
+            point_left_end.y + height,
+            point_left_end.z,
+        ),
+        point_right_end,
+        Vec3::new(
+            point_right_end.x,
+            point_right_end.y + height,
+            point_right_end.z,
+        ),
+    ];
+
+    return points;
 }
 
 fn calc_wall_points(start: Vec3, end: Vec3, size: f32, height: f32) -> [Vec3; 8] {
