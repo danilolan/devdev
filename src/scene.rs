@@ -21,15 +21,6 @@ pub fn spawn_scene(
         ..default()
     });
 
-    commands
-        .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube::from(shape::Cube { size: 2.0 }))),
-            material: materials.add(Color::rgb(0.2, 0.8, 0.8).into()),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
-            ..default()
-        })
-        .insert(Collider::cuboid(1.0, 1.0, 1.0));
-
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             shadows_enabled: true,

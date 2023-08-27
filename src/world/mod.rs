@@ -1,11 +1,15 @@
 use bevy::prelude::*;
 pub struct WorldPlugin;
 
-mod object;
+//plugins
+pub mod object;
 use object::*;
 
-mod tilemap;
-use tilemap::*;
+pub mod grid;
+use grid::*;
+
+pub mod walls;
+use walls::*;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
@@ -13,7 +17,8 @@ impl Plugin for WorldPlugin {
         app.add_systems(Update, handle_lerp_movement);
         //plugins
         app.add_plugins(ObjectPlugin);
-        app.add_plugins(TileMapPlugin);
+        app.add_plugins(GridPlugin);
+        app.add_plugins(WallsPlugin);
     }
 }
 
