@@ -10,7 +10,8 @@ pub struct WallsPlugin;
 
 impl Plugin for WallsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, start_wall);
+        app.add_systems(Update, handle_walls);
+        app.add_systems(Update, test);
         app.init_resource::<WallPoints>();
     }
 }
@@ -18,12 +19,14 @@ impl Plugin for WallsPlugin {
 //----resources----
 #[derive(Resource)]
 pub struct WallPoints {
-    points: Vec<Vec3>,
+    points: Vec<[i32; 2]>,
 }
 
 impl Default for WallPoints {
     fn default() -> Self {
-        WallPoints { points: Vec::new() }
+        WallPoints {
+            points: vec![[0, 0], [10, 0], [10, 10], [0, 10]],
+        }
     }
 }
 //----components----
@@ -34,14 +37,19 @@ const SIZE: f32 = 0.5;
 const HEIGHT: f32 = 2.0;
 
 //----systems----
-fn start_wall(
+fn handle_walls(
+    walls_points: Res<WallPoints>,
     mut commands: Commands,
     grid: Res<Grid>,
     mut res_mesh: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    query: Query<(Entity, &WallMesh)>,
+    mut mesh_query: Query<&mut Handle<Mesh>>,
 ) {
-    //points to generate the walls
-    let points: Vec<[i32; 2]> = vec![[0, 0], [10, 0], [10, 10], [0, 10]];
+    if !walls_points.is_changed() {
+        return;
+    }
+    let points = &walls_points.points;
     //vector to hold the state of points that already connected
     let mut points_connected: Vec<[usize; 2]> = Vec::new();
 
@@ -80,11 +88,20 @@ fn start_wall(
     let mesh = builder.build();
     let mesh_handle = res_mesh.add(mesh);
     let material = materials.add(Color::rgb(0.2, 0.2, 0.2).into());
-    commands.spawn(PbrBundle {
-        mesh: mesh_handle,
-        material,
-        ..Default::default()
-    });
+
+    if let Some((entity, _)) = query.iter().next() {
+        // Se uma entidade WallMesh já existir
+        *mesh_query.get_mut(entity).unwrap() = mesh_handle;
+    } else {
+        // Se ainda não houver entidade WallMesh, crie uma
+        commands
+            .spawn(PbrBundle {
+                mesh: mesh_handle,
+                material,
+                ..Default::default()
+            })
+            .insert(WallMesh {});
+    }
 }
 
 //builds a mesh adding squares
