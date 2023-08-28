@@ -20,7 +20,6 @@ impl Default for Grid {
         Grid { tile_size: 1.0 }
     }
 }
-
 impl Grid {
     //world: position in world
     //tile: center position of a tile

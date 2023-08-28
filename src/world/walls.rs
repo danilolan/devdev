@@ -1,9 +1,7 @@
 use crate::world::grid::Grid;
 use bevy::{
-    gizmos,
     prelude::*,
     render::{mesh::Indices, render_resource::PrimitiveTopology},
-    transform::commands,
 };
 
 pub struct WallsPlugin;
@@ -11,7 +9,6 @@ pub struct WallsPlugin;
 impl Plugin for WallsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, handle_walls);
-        app.add_systems(Update, test);
         app.init_resource::<WallPoints>();
     }
 }
@@ -229,8 +226,8 @@ fn calc_pillar_points(position: Vec3, size: f32, height: f32) -> [Vec3; 8] {
     let start = Vec3::new(position.x + (size / 4.0), position.y, position.z);
     let end = Vec3::new(position.x - (size / 4.0), position.y, position.z);
     let (point_left_start, point_right_start) =
-        calc_perpendicular_points(start, direction, (size / 2.0));
-    let (point_left_end, point_right_end) = calc_perpendicular_points(end, direction, (size / 2.0));
+        calc_perpendicular_points(start, direction, size / 2.0);
+    let (point_left_end, point_right_end) = calc_perpendicular_points(end, direction, size / 2.0);
 
     //create points vector with defined order
     let points = [
@@ -298,8 +295,6 @@ fn calc_wall_points(start: Vec3, end: Vec3, size: f32, height: f32) -> [Vec3; 8]
             point_right_end.z,
         ),
     ];
-    println!("direction {:?}", direction);
-    println!("{:?}", points);
 
     return points;
 }
