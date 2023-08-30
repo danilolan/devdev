@@ -54,7 +54,7 @@ impl WallPoints {
 impl Default for WallPoints {
     fn default() -> Self {
         WallPoints {
-            points: vec![[0, 0], [10, 0], [10, 10], [0, 10]],
+            points: vec![[0, 8], [0, 0]],
         }
     }
 }
@@ -87,6 +87,7 @@ fn handle_walls(
     //looping in all points
     for (index, &point) in points.iter().enumerate() {
         let adjacent_points = find_adjacent_points(&points, point);
+        println!("{:?} - {:?}", &points, &point);
 
         //looping in all connected sides in this point
         for adjacent_index in adjacent_points.iter().filter_map(|&option| option) {
@@ -189,22 +190,27 @@ impl MeshBuilder {
 fn find_adjacent_points(points: &Vec<[i32; 2]>, current_point: [i32; 2]) -> [Option<usize>; 4] {
     let mut result = [None, None, None, None];
 
-    for (index, &point) in points.iter().enumerate() {
-        //up
-        if point == [current_point[0] + 10, current_point[1]] {
-            result[0] = Some(index);
+    let max_distance = 1000;
+    // Cria uma hashset para busca rápida
+    let points_set: std::collections::HashSet<_> = points.iter().collect();
+
+    for distance in 1..=max_distance {
+        let potential_points = [
+            [current_point[0] + distance, current_point[1]], // up
+            [current_point[0], current_point[1] + distance], // right
+            [current_point[0] - distance, current_point[1]], // down
+            [current_point[0], current_point[1] - distance], // left
+        ];
+
+        for (i, &potential_point) in potential_points.iter().enumerate() {
+            if result[i].is_none() && points_set.contains(&potential_point) {
+                result[i] = points.iter().position(|&p| p == potential_point);
+            }
         }
-        //right
-        if point == [current_point[0], current_point[1] + 10] {
-            result[1] = Some(index);
-        }
-        //down
-        if point == [current_point[0] - 10, current_point[1]] {
-            result[2] = Some(index);
-        }
-        //left
-        if point == [current_point[0], current_point[1] - 10] {
-            result[3] = Some(index);
+
+        // Se todos os pontos adjacentes forem encontrados, saia do loop
+        if result.iter().all(|&x| x.is_some()) {
+            break;
         }
     }
 

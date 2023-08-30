@@ -32,8 +32,8 @@ impl Default for MousePoints {
 
 impl MousePoints {
     fn reset(&mut self) {
-        for mut point in self.points {
-            point = None;
+        for mut _point in self.points {
+            _point = None;
         }
     }
 }
@@ -62,6 +62,7 @@ fn handle_building(
             (mouse_points.points[0], mouse_points.points[1])
         {
             wall_points.add_square(first_point, second_point);
+            wall_points.set_changed();
         }
 
         //reset
