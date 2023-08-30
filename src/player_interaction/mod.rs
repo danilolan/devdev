@@ -6,6 +6,8 @@ pub mod picking;
 use picking::PickingPlugin;
 pub mod selection;
 use selection::SelectionPlugin;
+pub mod building;
+use building::BuildingPlugin;
 
 pub struct PlayerInteractionPlugin;
 
@@ -19,6 +21,7 @@ impl Plugin for PlayerInteractionPlugin {
         app.add_plugins(CameraPlugin);
         app.add_plugins(PickingPlugin);
         app.add_plugins(SelectionPlugin);
+        app.add_plugins(BuildingPlugin);
     }
 }
 
@@ -26,27 +29,24 @@ impl Plugin for PlayerInteractionPlugin {
 #[derive(Component)]
 pub struct Player {}
 
-
 //Systems
 const SPEED: f32 = 10.0;
 
-pub fn spawn_player(
-    mut commands: Commands,
-){
+pub fn spawn_player(mut commands: Commands) {
     commands.spawn((
         Player {},
         Transform {
             ..Default::default()
         },
-        Name::new("player")
+        Name::new("player"),
     ));
 }
 
 pub fn plane_movement(
     mut player_query: Query<&mut Transform, With<Player>>,
     keyboard_input: Res<Input<KeyCode>>,
-    time: Res<Time>
-){
+    time: Res<Time>,
+) {
     if let Ok(mut transform) = player_query.get_single_mut() {
         let mut direction = Vec3::ZERO;
 
@@ -57,7 +57,7 @@ pub fn plane_movement(
             direction += Vec3::new(-0.0, 0.0, -1.0)
         }
         if keyboard_input.pressed(KeyCode::D) {
-            direction += Vec3::new(-1.0,0.0 ,0.0)
+            direction += Vec3::new(-1.0, 0.0, 0.0)
         }
         if keyboard_input.pressed(KeyCode::A) {
             direction += Vec3::new(1.0, 0.0, 0.0)
@@ -68,7 +68,7 @@ pub fn plane_movement(
             direction = transform.rotation.mul_vec3(direction);
         }
 
-        transform.translation +=  direction * SPEED * time.delta_seconds();
+        transform.translation += direction * SPEED * time.delta_seconds();
     }
 }
 
@@ -82,4 +82,4 @@ pub fn sync_player_rotation(
     let mut target = camera_transform.translation;
     target.y = 0.0;
     player_transform.look_at(target, Vec3::Y);
-} 
+}

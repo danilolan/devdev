@@ -19,6 +19,38 @@ pub struct WallPoints {
     points: Vec<[i32; 2]>,
 }
 
+impl WallPoints {
+    pub fn add_square(&mut self, first: [i32; 2], second: [i32; 2]) {
+        let points = self.calc_square_vertices(first, second);
+
+        for point in points {
+            self.add_point(point);
+        }
+    }
+    pub fn add_point(&mut self, point: [i32; 2]) {
+        if self.check_if_point_exists(point) {
+            return;
+        }
+
+        self.points.push(point);
+    }
+    pub fn check_if_point_exists(&self, point: [i32; 2]) -> bool {
+        if self.points.contains(&point) {
+            return true;
+        }
+        return false;
+    }
+
+    fn calc_square_vertices(&self, p1: [i32; 2], p2: [i32; 2]) -> [[i32; 2]; 4] {
+        let a = [p1[0], p1[1]];
+        let b = [p1[0], p2[1]];
+        let c = [p2[0], p2[1]];
+        let d = [p2[0], p1[1]];
+
+        [a, b, c, d]
+    }
+}
+
 impl Default for WallPoints {
     fn default() -> Self {
         WallPoints {
