@@ -9,6 +9,8 @@ pub struct WallsPlugin;
 impl Plugin for WallsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, handle_walls);
+        app.add_systems(Update, handle_tops);
+        app.add_systems(Update, handle_baseboard);
         app.init_resource::<WallPoints>();
     }
 }
@@ -16,54 +18,59 @@ impl Plugin for WallsPlugin {
 //----resources----
 #[derive(Resource)]
 pub struct WallPoints {
-    points: Vec<[i32; 2]>,
+    lines: Vec<[[i32; 2]; 2]>,
 }
 
 impl WallPoints {
-    pub fn add_square(&mut self, first: [i32; 2], second: [i32; 2]) {
-        let points = self.calc_square_vertices(first, second);
-
-        for point in points {
-            self.add_point(point);
-        }
-    }
-    pub fn add_point(&mut self, point: [i32; 2]) {
-        if self.check_if_point_exists(point) {
+    pub fn add_line(&mut self, line: [[i32; 2]; 2]) {
+        if self.check_if_line_exists(line) {
             return;
         }
 
-        self.points.push(point);
+        let [x1, y1] = line[0];
+        let [x2, y2] = line[1];
+
+        // Calcular a distância em x e y
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+
+        let point2: [i32; 2];
+        if dx.abs() < dy.abs() {
+            point2 = [x1, y2]
+        } else {
+            point2 = [x2, y1]
+        }
+
+        self.lines.push([line[0], point2]);
     }
-    pub fn check_if_point_exists(&self, point: [i32; 2]) -> bool {
-        if self.points.contains(&point) {
+    pub fn check_if_line_exists(&self, line: [[i32; 2]; 2]) -> bool {
+        if self.lines.contains(&line) {
             return true;
         }
         return false;
-    }
-
-    fn calc_square_vertices(&self, p1: [i32; 2], p2: [i32; 2]) -> [[i32; 2]; 4] {
-        let a = [p1[0], p1[1]];
-        let b = [p1[0], p2[1]];
-        let c = [p2[0], p2[1]];
-        let d = [p2[0], p1[1]];
-
-        [a, b, c, d]
     }
 }
 
 impl Default for WallPoints {
     fn default() -> Self {
         WallPoints {
-            points: vec![[0, 8], [0, 0]],
+            lines: vec![[[0, 8], [0, 0]], [[0, 0], [10, 0]]],
         }
     }
 }
 //----components----
 #[derive(Component)]
 struct WallMesh {}
+#[derive(Component)]
+struct BaseboardMesh {}
+#[derive(Component)]
+struct TopMesh {}
 
-const SIZE: f32 = 0.5;
+const SIZE: f32 = 0.25;
 const HEIGHT: f32 = 2.0;
+const BASEBOARD_SIZE: f32 = 0.2;
+const BASEBOARD_HEIGHT: f32 = 0.2;
+const TOP_HEIGHT: f32 = 0.05;
 
 //----systems----
 fn handle_walls(
@@ -72,54 +79,41 @@ fn handle_walls(
     grid: Res<Grid>,
     mut res_mesh: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    query: Query<(Entity, &WallMesh)>,
+    wall_query: Query<(Entity, &WallMesh)>,
+    baseboard_query: Query<(Entity, &BaseboardMesh)>,
+    top_query: Query<(Entity, &TopMesh)>,
     mut mesh_query: Query<&mut Handle<Mesh>>,
 ) {
     if !walls_points.is_changed() {
         return;
     }
-    let points = &walls_points.points;
-    //vector to hold the state of points that already connected
-    let mut points_connected: Vec<[usize; 2]> = Vec::new();
 
-    let mut builder = MeshBuilder::new();
+    println!("entrou");
+    let points = &walls_points.lines;
+    let mut wall_builder = MeshBuilder::new();
 
-    //looping in all points
-    for (index, &point) in points.iter().enumerate() {
-        let adjacent_points = find_adjacent_points(&points, point);
-        println!("{:?} - {:?}", &points, &point);
+    for (index, &points) in points.iter().enumerate() {
+        let start = grid.coord_to_tile(points[0]);
+        let end = grid.coord_to_tile(points[1]);
+        let direction = end - start;
 
-        //looping in all connected sides in this point
-        for adjacent_index in adjacent_points.iter().filter_map(|&option| option) {
-            //only continue if the points_points connected does not contain actual point and adjacent point connection
-            if !points_connected.contains(&[index, adjacent_index])
-                || !points_connected.contains(&[index, adjacent_index])
-            {
-                //get the starts and end position with the pillar offset
-                let start = grid.coord_to_tile(points[index]);
-                let end = grid.coord_to_tile(points[adjacent_index]);
-                let direction = end - start;
-                let start_offset = start + (direction.normalize() * (0.25 * SIZE));
-                let end_offset = end - (direction.normalize() * (0.25 * SIZE));
-
-                //create walls
-                create_wall(start_offset, end_offset, SIZE, HEIGHT, &mut builder);
-
-                points_connected.push([index, adjacent_index])
-            }
-        }
-
-        //create pillars
-        let pillar_position = grid.coord_to_tile(point);
-        create_pillar(pillar_position, adjacent_points, SIZE, HEIGHT, &mut builder);
+        let start_offset = start + (direction.normalize() * -(0.25 * SIZE));
+        let end_offset = end - (direction.normalize() * -(0.25 * SIZE));
+        create_wall(
+            start_offset,
+            end_offset,
+            SIZE,
+            HEIGHT - TOP_HEIGHT,
+            &mut wall_builder,
+        );
     }
 
     //render the mesh
-    let mesh = builder.build();
+    let mesh = wall_builder.build();
     let mesh_handle = res_mesh.add(mesh);
-    let material = materials.add(Color::rgb(0.2, 0.2, 0.2).into());
+    let material = materials.add(Color::rgb(0.83, 0.83, 0.78).into());
 
-    if let Some((entity, _)) = query.iter().next() {
+    if let Some((entity, _)) = wall_query.iter().next() {
         // Se uma entidade WallMesh já existir
         *mesh_query.get_mut(entity).unwrap() = mesh_handle;
     } else {
@@ -131,6 +125,126 @@ fn handle_walls(
                 ..Default::default()
             })
             .insert(WallMesh {});
+    }
+}
+
+fn handle_tops(
+    walls_points: Res<WallPoints>,
+    mut commands: Commands,
+    grid: Res<Grid>,
+    mut res_mesh: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    top_query: Query<(Entity, &TopMesh)>,
+    mut mesh_query: Query<&mut Handle<Mesh>>,
+) {
+    if !walls_points.is_changed() {
+        return;
+    }
+    let points = &walls_points.lines;
+    let mut top_builder = MeshBuilder::new();
+
+    //looping in all points
+    for (index, &points) in points.iter().enumerate() {
+        let start = grid.coord_to_tile(points[0]);
+        let end = grid.coord_to_tile(points[1]);
+        let direction = end - start;
+
+        let start_offset = start + (direction.normalize() * -(0.25 * SIZE));
+        let end_offset = end - (direction.normalize() * -(0.25 * SIZE));
+
+        let mut start_top = start_offset;
+        let mut end_top = end_offset;
+        start_top.y = HEIGHT - TOP_HEIGHT;
+        end_top.y = HEIGHT - TOP_HEIGHT;
+        create_wall(start_top, end_top, SIZE, TOP_HEIGHT, &mut top_builder);
+    }
+
+    let mesh = top_builder.build();
+    let mesh_handle = res_mesh.add(mesh);
+    let material = materials.add(Color::rgb(0.03, 0.06, 0.05).into());
+
+    if let Some((entity, _)) = top_query.iter().next() {
+        // Se uma entidade WallMesh já existir
+        *mesh_query.get_mut(entity).unwrap() = mesh_handle;
+    } else {
+        // Se ainda não houver entidade WallMesh, crie uma
+        commands
+            .spawn(PbrBundle {
+                mesh: mesh_handle,
+                material,
+                ..Default::default()
+            })
+            .insert(TopMesh {});
+    }
+}
+
+fn handle_baseboard(
+    walls_points: Res<WallPoints>,
+    mut commands: Commands,
+    grid: Res<Grid>,
+    mut res_mesh: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    baseboard_query: Query<(Entity, &BaseboardMesh)>,
+    mut mesh_query: Query<&mut Handle<Mesh>>,
+) {
+    if !walls_points.is_changed() {
+        return;
+    }
+    let points = &walls_points.lines;
+
+    let mut baseboard_builder = MeshBuilder::new();
+
+    //looping in all points
+    for (index, &points) in points.iter().enumerate() {
+        let start = grid.coord_to_tile(points[0]);
+        let end = grid.coord_to_tile(points[1]);
+        let direction = end - start;
+
+        let baseboard_start_offset = start + (direction.normalize() * -(0.3 * SIZE));
+        let baseboard_end_offset = end - (direction.normalize() * -(0.3 * SIZE));
+        create_wall(
+            baseboard_start_offset,
+            baseboard_end_offset,
+            SIZE + BASEBOARD_SIZE,
+            BASEBOARD_HEIGHT,
+            &mut baseboard_builder,
+        );
+    }
+
+    let mesh = baseboard_builder.build();
+    let mesh_handle = res_mesh.add(mesh);
+    let material = materials.add(Color::rgb(0.2, 0.2, 0.2).into());
+
+    if let Some((entity, _)) = baseboard_query.iter().next() {
+        // Se uma entidade WallMesh já existir
+        *mesh_query.get_mut(entity).unwrap() = mesh_handle;
+    } else {
+        // Se ainda não houver entidade WallMesh, crie uma
+        commands
+            .spawn(PbrBundle {
+                mesh: mesh_handle,
+                material,
+                ..Default::default()
+            })
+            .insert(BaseboardMesh {});
+    }
+
+    let mesh = baseboard_builder.build();
+    let mesh_handle = res_mesh.add(mesh);
+    let material = materials.add(Color::rgb(0.1, 0.8, 0.1).into());
+
+    if let Some((entity, _)) = baseboard_query.iter().next() {
+        // Se uma entidade WallMesh já existir
+        *mesh_query.get_mut(entity).unwrap() = mesh_handle;
+    } else {
+        // Se ainda não houver entidade WallMesh, crie uma
+        commands
+            .spawn(PbrBundle {
+                mesh: mesh_handle,
+                material,
+                ..Default::default()
+            })
+            .insert(TopMesh {});
     }
 }
 
@@ -225,6 +339,8 @@ pub fn create_wall(start: Vec3, end: Vec3, size: f32, height: f32, builder: &mut
     builder.add_square(points[6], points[7], points[3], points[2]);
     builder.add_square(points[1], points[3], points[7], points[5]);
     builder.add_square(points[0], points[1], points[5], points[4]);
+    builder.add_square(points[2], points[3], points[1], points[0]);
+    builder.add_square(points[4], points[5], points[7], points[6]);
 }
 
 //creates the pillar hidden the faces that connected

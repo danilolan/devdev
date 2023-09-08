@@ -61,7 +61,7 @@ fn handle_building(
         if let (Some(first_point), Some(second_point)) =
             (mouse_points.points[0], mouse_points.points[1])
         {
-            wall_points.add_square(first_point, second_point);
+            wall_points.add_line([first_point, second_point]);
             wall_points.set_changed();
         }
 
