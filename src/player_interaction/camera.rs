@@ -1,5 +1,8 @@
 use bevy::prelude::*;
-use bevy::{input::mouse::{MouseMotion, MouseWheel}, window::PrimaryWindow};
+use bevy::{
+    input::mouse::{MouseMotion, MouseWheel},
+    window::PrimaryWindow,
+};
 
 use super::Player;
 use std::f32::consts::PI;
@@ -22,27 +25,25 @@ pub struct CameraDefault {
     pub mouse_sensitivity: f32,
     pub zoom_sensitivity: f32,
     pub zoom_bounds: (f32, f32),
-    pub button: MouseButton
+    pub button: MouseButton,
 }
 
 //Systems
-pub fn spawn_camera(
-    mut commands: Commands
-){
+pub fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Camera3dBundle {
             transform: Transform::from_xyz(-5.0, 5.0, 5.0)
-            .looking_at(Vec3::ZERO, Vec3::new(0.0, 1.0, 0.0)),
-            ..default()  
+                .looking_at(Vec3::ZERO, Vec3::new(0.0, 1.0, 0.0)),
+            ..default()
         },
         CameraDefault {
-            focus: Vec3::new(0.0,0.0,0.0),
+            focus: Vec3::new(0.0, 0.0, 0.0),
             mouse_sensitivity: 2.0,
             radius: 10.0,
             zoom_sensitivity: 1.0,
-            zoom_bounds: (10.0, 50.0),
-            button: MouseButton::Right
-        }
+            zoom_bounds: (5.0, 70.0),
+            button: MouseButton::Right,
+        },
     ));
 }
 
@@ -84,21 +85,16 @@ pub fn orbit_mouse(
             // check if new rotation will cause camera to go beyond the 180 degree vertical bounds
             let up_vector = new_rotation * Vec3::Y;
 
-            if up_vector.y > 0.5 && up_vector.y < 0.9{
+            if up_vector.y > 0.5 && up_vector.y < 0.9 {
                 cam_transform.rotation = new_rotation;
             }
         }
-    
     }
     let rot_matrix = Mat3::from_quat(cam_transform.rotation);
     cam_transform.translation = cam.focus + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, cam.radius));
-
 }
 
-pub fn zoom_mouse(
-    mut scroll_evr: EventReader<MouseWheel>, 
-    mut cam_q: Query<&mut CameraDefault>
-) {
+pub fn zoom_mouse(mut scroll_evr: EventReader<MouseWheel>, mut cam_q: Query<&mut CameraDefault>) {
     let mut scroll = 0.0;
     for ev in scroll_evr.iter() {
         scroll += ev.y;

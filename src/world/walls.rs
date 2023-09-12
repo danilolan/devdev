@@ -73,17 +73,17 @@ fn handle_walls(
     if let Some(points) = walls_points.line {
         let start = grid.coord_to_tile(points[0]);
         let end = grid.coord_to_tile(points[1]);
+        let object_size = 0.4;
+        let scale_multiplier = 2.5;
 
         let direction = end - start;
-        let scale = direction.length();
+        let scale = direction.length() - object_size;
         let rotation = Quat::from_rotation_arc(Vec3::X, direction.normalize());
         let midpoint = start + (direction / 2.0);
-        let scale_multiplier = 10.0;
-        let collider = Collider::cuboid(2.0, 1.0, 1.0);
 
         commands
-            .spawn((
-                SceneBundle {
+            .spawn(
+                (SceneBundle {
                     scene: wall.clone(),
                     transform: Transform {
                         translation: midpoint,
@@ -92,9 +92,8 @@ fn handle_walls(
                         ..Default::default()
                     },
                     ..Default::default()
-                },
-                collider,
-            ))
+                }),
+            )
             .insert(Name::from("wall".to_string()));
 
         walls_points.line = None;
