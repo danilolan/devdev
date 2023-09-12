@@ -9,8 +9,6 @@ pub struct WallsPlugin;
 impl Plugin for WallsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, handle_walls);
-        app.add_systems(Update, handle_tops);
-        app.add_systems(Update, handle_baseboard);
         app.init_resource::<WallPoints>();
     }
 }
@@ -75,56 +73,27 @@ const TOP_HEIGHT: f32 = 0.05;
 //----systems----
 fn handle_walls(
     walls_points: Res<WallPoints>,
+    server: Res<AssetServer>,
     mut commands: Commands,
     grid: Res<Grid>,
-    mut res_mesh: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    wall_query: Query<(Entity, &WallMesh)>,
-    baseboard_query: Query<(Entity, &BaseboardMesh)>,
-    top_query: Query<(Entity, &TopMesh)>,
-    mut mesh_query: Query<&mut Handle<Mesh>>,
 ) {
     if !walls_points.is_changed() {
         return;
     }
 
-    println!("entrou");
-    let points = &walls_points.lines;
-    let mut wall_builder = MeshBuilder::new();
+    let wall: Handle<Scene> = server.load("./models/wall.gltf#Scene0");
 
-    for (index, &points) in points.iter().enumerate() {
+    for points in &walls_points.lines {
         let start = grid.coord_to_tile(points[0]);
         let end = grid.coord_to_tile(points[1]);
-        let direction = end - start;
 
-        let start_offset = start + (direction.normalize() * -(0.25 * SIZE));
-        let end_offset = end - (direction.normalize() * -(0.25 * SIZE));
-        create_wall(
-            start_offset,
-            end_offset,
-            SIZE,
-            HEIGHT - TOP_HEIGHT,
-            &mut wall_builder,
-        );
-    }
-
-    //render the mesh
-    let mesh = wall_builder.build();
-    let mesh_handle = res_mesh.add(mesh);
-    let material = materials.add(Color::rgb(0.83, 0.83, 0.78).into());
-
-    if let Some((entity, _)) = wall_query.iter().next() {
-        // Se uma entidade WallMesh já existir
-        *mesh_query.get_mut(entity).unwrap() = mesh_handle;
-    } else {
-        // Se ainda não houver entidade WallMesh, crie uma
         commands
-            .spawn(PbrBundle {
-                mesh: mesh_handle,
-                material,
+            .spawn(SceneBundle {
+                scene: wall.clone(),
+                transform: Transform::from_translation(start),
                 ..Default::default()
             })
-            .insert(WallMesh {});
+            .insert(Name::from("Wall".to_string()));
     }
 }
 

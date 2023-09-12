@@ -4,7 +4,7 @@ pub struct ObjectPlugin;
 
 impl Plugin for ObjectPlugin {
     fn build(&self, _app: &mut App) {
-        //app.add_systems(Startup, setup);
+        
     }
 }
 
