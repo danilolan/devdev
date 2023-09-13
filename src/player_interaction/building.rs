@@ -48,13 +48,13 @@ fn handle_building(
 ) {
     if buttons.just_pressed(MouseButton::Left) {
         //get first point
-        let hit_point = picking.hit_position_ground.unwrap_or_default();
+        let hit_point = picking.get_hit_in_ground();
         mouse_points.points[0] = Some(grid.world_to_coord(hit_point));
     }
 
     if buttons.just_released(MouseButton::Left) {
         //get second point
-        let hit_point = picking.hit_position_ground.unwrap_or_default();
+        let hit_point = picking.get_hit_in_ground();
         mouse_points.points[1] = Some(grid.world_to_coord(hit_point));
 
         //change walls

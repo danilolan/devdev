@@ -39,7 +39,7 @@ fn handle_object(
     mut global_query: Query<(&mut LerpMovement,)>,
 ) {
     if let Some(entity) = object_tool_data.entity {
-        let hit_point = picking.hit_position_ground.unwrap_or_default();
+        let hit_point = picking.get_hit_in_ground();
         if let Ok((mut lerp_movement,)) = global_query.get_mut(entity) {
             let position: Vec3 = match object_tool_data.grid_size {
                 Some(grid_size) => (hit_point / grid_size).round() * grid_size,
