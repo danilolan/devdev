@@ -11,6 +11,8 @@ use grid::*;
 pub mod walls;
 use walls::*;
 
+pub mod physics;
+
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         //systems
