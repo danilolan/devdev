@@ -1,7 +1,6 @@
 //file used to declare components, systems... to use in world physics
 
 use bevy::{gizmos, prelude::*};
-use bevy_rapier3d::prelude::Collider;
 
 pub struct PhysicsPlugin;
 

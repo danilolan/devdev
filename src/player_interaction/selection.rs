@@ -2,7 +2,6 @@ use crate::world::LerpMovement;
 
 use super::picking::PickingData;
 use bevy::prelude::*;
-use bevy_rapier3d::prelude::Collider;
 
 pub struct SelectionPlugin;
 
@@ -53,31 +52,5 @@ fn handle_object(
 fn place_object(mut object_tool_data: ResMut<ObjectToolData>, buttons: Res<Input<MouseButton>>) {
     if buttons.just_pressed(MouseButton::Left) {
         object_tool_data.entity = None;
-    }
-}
-
-fn test(
-    mut object_tool_data: ResMut<ObjectToolData>,
-    buttons: Res<Input<MouseButton>>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    if buttons.just_pressed(MouseButton::Right) {
-        let entity = commands
-            .spawn(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Cube::from(shape::Cube { size: 2.0 }))),
-                material: materials.add(Color::rgb(0.2, 0.8, 0.8).into()),
-                transform: Transform::from_xyz(0.0, 0.0, 0.0),
-                ..default()
-            })
-            .insert(Collider::cuboid(1.0, 1.0, 1.0))
-            .insert(LerpMovement {
-                target_position: Vec3::new(5.0, 5.0, 5.0),
-                current_position: Vec3::new(0.0, 0.0, 0.0),
-                speed: 10.0,
-            })
-            .id();
-        object_tool_data.entity = Some(entity);
     }
 }

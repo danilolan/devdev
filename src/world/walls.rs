@@ -4,7 +4,6 @@ use bevy::{
     prelude::*,
     render::{mesh::Indices, render_resource::PrimitiveTopology},
 };
-use bevy_rapier3d::prelude::Collider;
 
 use super::physics::BoxCollider;
 

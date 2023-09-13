@@ -1,6 +1,5 @@
 use bevy::math::EulerRot;
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_rapier3d::prelude::{Collider, QueryFilter, RapierContext};
 
 use crate::{player_interaction::camera::CameraDefault, world::physics::BoxCollider};
 
@@ -13,7 +12,7 @@ impl Plugin for PickingPlugin {
 
         //systems
         app.add_systems(Update, handle_picking);
-        app.add_systems(Update, test);
+        //app.add_systems(Update, test);
     }
 }
 
@@ -54,7 +53,7 @@ impl PickingData {
             rotation: collider.rotation,
             scale: collider.scale,
         };
-        // Transformar o ray para o espaço local do cubo
+
         let inv_rot = transform.rotation.inverse();
         let local_origin = inv_rot * (ray.origin - transform.translation);
         let local_direction = inv_rot * ray.direction;
@@ -62,7 +61,6 @@ impl PickingData {
         let min = -transform.scale / 2.0;
         let max = transform.scale / 2.0;
 
-        // Passo 2: Verifique a interseção usando o método dos "slabs" no espaço local
         let t1 = (min.x - local_origin.x) / local_direction.x;
         let t2 = (max.x - local_origin.x) / local_direction.x;
         let t3 = (min.y - local_origin.y) / local_direction.y;
@@ -87,7 +85,6 @@ fn handle_picking(
     mut picking: ResMut<PickingData>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
     cam_q: Query<(&Camera, &GlobalTransform), With<CameraDefault>>,
-    rapier_context: Res<RapierContext>,
 ) {
     let position = match q_windows.single().cursor_position() {
         Some(pos) => pos,
