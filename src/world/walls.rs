@@ -4,7 +4,8 @@ use bevy::{
     prelude::*,
     render::{mesh::Indices, render_resource::PrimitiveTopology},
 };
-use bevy_rapier3d::prelude::Collider;
+
+use super::physics::BoxCollider;
 
 pub struct WallsPlugin;
 
@@ -49,7 +50,7 @@ fn handle_walls(
 
         //wall
         commands
-            .spawn(
+            .spawn((
                 (SceneBundle {
                     scene: wall.clone(),
                     transform: Transform {
@@ -60,7 +61,12 @@ fn handle_walls(
                     },
                     ..Default::default()
                 }),
-            )
+                BoxCollider {
+                    scale: Vec3::new(scale + object_size, 2.0, object_size),
+                    translation: midpoint,
+                    rotation,
+                },
+            ))
             .insert(Name::from("wall".to_string()));
 
         walls_points.line = None;
