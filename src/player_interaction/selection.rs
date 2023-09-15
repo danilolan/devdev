@@ -1,4 +1,4 @@
-use crate::world::LerpMovement;
+use crate::world::physics::LerpMovement;
 
 use super::picking::PickingData;
 use bevy::prelude::*;
