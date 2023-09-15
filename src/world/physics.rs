@@ -122,7 +122,7 @@ pub struct LerpMovement {
 }
 
 impl LerpMovement {
-    fn new(speed: f32, start_translation: Vec3) -> Self {
+    pub fn new(speed: f32, start_translation: Vec3) -> Self {
         Self {
             target_position: start_translation,
             current_position: start_translation,
