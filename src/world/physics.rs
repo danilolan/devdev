@@ -9,6 +9,7 @@ impl Plugin for PhysicsPlugin {
         app.add_systems(Update, show_colliders);
         app.add_systems(Update, handle_colliders);
         app.add_systems(Update, handle_smooth_movement);
+        app.add_systems(Update, handle_lerp_movement);
     }
 }
 
@@ -110,4 +111,35 @@ pub struct BoxCollider {
     pub scale: Vec3,
     pub translation: Vec3,
     pub rotation: Quat,
+}
+
+//----lerp movement----
+#[derive(Component)]
+pub struct LerpMovement {
+    pub target_position: Vec3,
+    pub current_position: Vec3,
+    pub speed: f32,
+}
+
+impl LerpMovement {
+    fn new(speed: f32, start_translation: Vec3) -> Self {
+        Self {
+            target_position: start_translation,
+            current_position: start_translation,
+            speed,
+        }
+    }
+    pub fn set_target(&mut self, target: Vec3) {
+        self.target_position = target;
+    }
+}
+
+fn handle_lerp_movement(time: Res<Time>, mut query: Query<(&mut LerpMovement, &mut Transform)>) {
+    for (mut lerp_movement, mut transform) in query.iter_mut() {
+        let t = lerp_movement.speed * time.delta_seconds();
+        lerp_movement.current_position = lerp_movement
+            .current_position
+            .lerp(lerp_movement.target_position, t);
+        transform.translation = lerp_movement.current_position;
+    }
 }
