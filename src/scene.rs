@@ -12,7 +12,10 @@ pub fn spawn_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    server: Res<AssetServer>,
 ) {
+    let window: Handle<Scene> = server.load("./models/window.gltf#Scene0");
+
     commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Plane::from_size(1000.0))),
         material: materials.add(Color::rgb(0.8, 0.8, 0.8).into()),
@@ -28,4 +31,17 @@ pub fn spawn_scene(
         transform: Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.7, 0.5, 0.0)),
         ..Default::default()
     });
+
+    commands
+        .spawn(
+            (SceneBundle {
+                scene: window.clone(),
+                transform: Transform {
+                    translation: Vec3::new(0.5, 0.0, 0.25),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )
+        .insert(Name::from("window".to_string()));
 }
