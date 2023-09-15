@@ -18,6 +18,7 @@ impl Plugin for PlayerInteractionPlugin {
         app.add_systems(Startup, spawn_player);
         app.add_systems(Update, plane_movement);
         app.add_systems(Update, sync_player_rotation);
+        app.add_systems(Update, proportional_smooth_values);
 
         //plugins
         app.add_plugins(CameraPlugin);
@@ -32,12 +33,20 @@ impl Plugin for PlayerInteractionPlugin {
 pub struct Player {}
 
 //Systems
-const SPEED: f32 = 10.0;
+const ACCELERATION: f32 = 5.0;
+const DESACELERATION: f32 = 5.0;
+const MAX_VELOCITY: f32 = 1.0;
 
 pub fn spawn_player(mut commands: Commands) {
     commands.spawn((
         Player {},
-        SmoothMovement::new(Vec3::default(), 50.0, 50.0, 10.0, Vec3::default()),
+        SmoothMovement::new(
+            Vec3::default(),
+            ACCELERATION,
+            DESACELERATION,
+            MAX_VELOCITY,
+            Vec3::default(),
+        ),
         Transform::default(),
         Name::new("player"),
     ));
@@ -70,7 +79,6 @@ pub fn plane_movement(
         }
 
         smooth_movement.change_translation(direction * time.delta_seconds(), time.delta_seconds());
-        //println!("{:?}", transform.translation)
     }
 }
 
@@ -84,4 +92,18 @@ pub fn sync_player_rotation(
     let mut target = camera_transform.translation;
     target.y = 0.0;
     player_transform.look_at(target, Vec3::Y);
+}
+
+pub fn proportional_smooth_values(
+    mut player_q: Query<(&mut SmoothMovement, &Transform), (With<Player>, Without<Camera>)>,
+    cam_q: Query<&Transform, With<Camera>>,
+) {
+    let Ok((mut smooth_movement, player_transform)) = player_q.get_single_mut() else { return };
+    let Ok(camera_transform) = cam_q.get_single() else { return };
+
+    let distance = (camera_transform.translation - player_transform.translation).length();
+
+    smooth_movement.max_velocity = MAX_VELOCITY * distance;
+    smooth_movement.acceleration = ACCELERATION * distance;
+    smooth_movement.desacceleration = DESACELERATION * distance;
 }

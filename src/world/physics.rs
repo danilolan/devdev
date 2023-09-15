@@ -18,23 +18,23 @@ impl Plugin for PhysicsPlugin {
 pub struct SmoothMovement {
     translation: Vec3,
     velocity: Vec3,
-    acceleration: f32,
-    desaceleration: f32,
-    max_velocity: f32,
+    pub acceleration: f32,
+    pub desacceleration: f32,
+    pub max_velocity: f32,
 }
 
 impl SmoothMovement {
     pub fn new(
         translation: Vec3,
         acceleration: f32,
-        desaceleration: f32,
+        desacceleration: f32,
         max_velocity: f32,
         velocity: Vec3,
     ) -> Self {
         Self {
             translation,
             acceleration,
-            desaceleration,
+            desacceleration,
             max_velocity,
             velocity,
         }
@@ -47,7 +47,7 @@ impl SmoothMovement {
         } else {
             // apply desacceleration
             if self.velocity.length().abs() > 0.0 {
-                self.velocity -= self.velocity.normalize() * self.desaceleration * dt;
+                self.velocity -= self.velocity.normalize() * self.desacceleration * dt;
             } else {
                 self.velocity = Vec3::ZERO;
             }
