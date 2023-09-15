@@ -18,23 +18,23 @@ impl Plugin for PhysicsPlugin {
 pub struct SmoothMovement {
     translation: Vec3,
     velocity: Vec3,
-    acceleration: f32,
-    desaceleration: f32,
-    max_velocity: f32,
+    pub acceleration: f32,
+    pub desacceleration: f32,
+    pub max_velocity: f32,
 }
 
 impl SmoothMovement {
     pub fn new(
         translation: Vec3,
         acceleration: f32,
-        desaceleration: f32,
+        desacceleration: f32,
         max_velocity: f32,
         velocity: Vec3,
     ) -> Self {
         Self {
             translation,
             acceleration,
-            desaceleration,
+            desacceleration,
             max_velocity,
             velocity,
         }
@@ -47,7 +47,7 @@ impl SmoothMovement {
         } else {
             // apply desacceleration
             if self.velocity.length().abs() > 0.0 {
-                self.velocity -= self.velocity.normalize() * self.desaceleration * dt;
+                self.velocity -= self.velocity.normalize() * self.desacceleration * dt;
             } else {
                 self.velocity = Vec3::ZERO;
             }
@@ -116,7 +116,7 @@ pub struct BoxCollider {
 //----lerp movement----
 #[derive(Component)]
 pub struct LerpMovement {
-    pub target_position: Vec3,
+    pub target_position: Option<Vec3>,
     pub current_position: Vec3,
     pub speed: f32,
 }
@@ -124,22 +124,24 @@ pub struct LerpMovement {
 impl LerpMovement {
     pub fn new(speed: f32, start_translation: Vec3) -> Self {
         Self {
-            target_position: start_translation,
+            target_position: None,
             current_position: start_translation,
             speed,
         }
     }
     pub fn set_target(&mut self, target: Vec3) {
-        self.target_position = target;
+        self.target_position = Some(target);
     }
 }
 
 fn handle_lerp_movement(time: Res<Time>, mut query: Query<(&mut LerpMovement, &mut Transform)>) {
     for (mut lerp_movement, mut transform) in query.iter_mut() {
-        let t = lerp_movement.speed * time.delta_seconds();
-        lerp_movement.current_position = lerp_movement
-            .current_position
-            .lerp(lerp_movement.target_position, t);
-        transform.translation = lerp_movement.current_position;
+        if let Some(target_position) = lerp_movement.target_position {
+            let t = lerp_movement.speed * time.delta_seconds();
+
+            transform.translation = transform.translation.lerp(target_position, t);
+
+            lerp_movement.target_position = None;
+        }
     }
 }
