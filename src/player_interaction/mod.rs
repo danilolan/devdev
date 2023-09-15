@@ -37,7 +37,7 @@ const SPEED: f32 = 10.0;
 pub fn spawn_player(mut commands: Commands) {
     commands.spawn((
         Player {},
-        SmoothMovement::new(Vec3::default(), 0.03, 0.002, 0.0),
+        SmoothMovement::new(Vec3::default(), 50.0, 50.0, 10.0, Vec3::default()),
         Transform::default(),
         Name::new("player"),
     ));
@@ -69,8 +69,7 @@ pub fn plane_movement(
             direction = transform.rotation.mul_vec3(direction);
         }
 
-        smooth_movement
-            .change_translation(transform.translation + direction * SPEED * time.delta_seconds());
+        smooth_movement.change_translation(direction * time.delta_seconds(), time.delta_seconds());
     }
 }
 

@@ -15,24 +15,57 @@ impl Plugin for PhysicsPlugin {
 //smooth movement
 #[derive(Component)]
 pub struct SmoothMovement {
-    pub translation: Vec3,
-    k1: f32,
-    k2: f32,
-    k3: f32,
+    translation: Vec3,
+    velocity: Vec3,
+    acceleration: f32,
+    desaceleration: f32,
+    max_velocity: f32,
 }
 
 impl SmoothMovement {
-    pub fn new(translation: Vec3, k1: f32, k2: f32, k3: f32) -> Self {
+    pub fn new(
+        translation: Vec3,
+        acceleration: f32,
+        desaceleration: f32,
+        max_velocity: f32,
+        velocity: Vec3,
+    ) -> Self {
         Self {
             translation,
-            k1: 0.3,
-            k2: 0.02,
-            k3: 0.0,
+            acceleration,
+            desaceleration,
+            max_velocity,
+            velocity,
         }
     }
-    pub fn change_translation(&mut self, translation: Vec3) {
-        self.translation = translation;
-        println!("{:?}", self.translation)
+
+    pub fn change_translation(&mut self, direction: Vec3, dt: f32) {
+        if direction.length().abs() > 0.0 {
+            // apply acceleration
+            self.velocity += direction.normalize() * self.acceleration * dt;
+        } else {
+            // apply desacceleration
+            if self.velocity.length().abs() > 0.0 {
+                self.velocity -= self.velocity.normalize() * self.desaceleration * dt;
+            } else {
+                self.velocity = Vec3::ZERO;
+            }
+        }
+
+        // limit max velocity
+        if self.velocity.length() > self.max_velocity {
+            self.velocity = self.velocity.normalize() * self.max_velocity;
+        }
+
+        println!("{:?}", self.velocity);
+
+        // move the transform
+        self.translation += self.velocity * dt;
+
+        // avoid tiny velocitys
+        if self.velocity.length() < 0.01 {
+            self.velocity = Vec3::ZERO;
+        }
     }
 }
 
