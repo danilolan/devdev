@@ -57,8 +57,6 @@ impl SmoothMovement {
             self.velocity = self.velocity.normalize() * self.max_velocity;
         }
 
-        println!("{:?}", self.velocity);
-
         // move the transform
         self.translation += self.velocity * dt;
 
