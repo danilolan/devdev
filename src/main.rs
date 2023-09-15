@@ -1,4 +1,7 @@
-use bevy::{prelude::*, diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin}};
+use bevy::{
+    diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    prelude::*,
+};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 pub const HEIGHT: f32 = 720.0;
@@ -10,6 +13,9 @@ use player_interaction::PlayerInteractionPlugin;
 mod world;
 use world::WorldPlugin;
 
+mod npc;
+use npc::NpcPlugin;
+
 mod scene;
 use scene::ScenePlugin;
 
@@ -17,17 +23,15 @@ fn main() {
     App::new()
         // Window Setup
         .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
-
         .add_plugins(DefaultPlugins)
         .add_plugins(WorldInspectorPlugin::new())
-
         //fps
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(LogDiagnosticsPlugin::default())
-        
         //Plugins
         .add_plugins(PlayerInteractionPlugin)
         .add_plugins(WorldPlugin)
+        .add_plugins(NpcPlugin)
         .add_plugins(ScenePlugin)
         .run();
 }
