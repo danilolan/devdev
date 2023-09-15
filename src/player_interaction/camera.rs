@@ -17,11 +17,17 @@ impl Plugin for CameraPlugin {
     }
 }
 
+const ZOOM_SPEED: f32 = 8.0;
+const ZOOM_BOUNDS: (f32, f32) = (5.0, 70.0);
+const ZOOM_SENSITIVITY: f32 = 30.0;
+const MOUSE_SENSITIVITY: f32 = 50.0;
+
 //Components
 #[derive(Component)]
 pub struct CameraDefault {
     pub focus: Vec3,
     pub radius: f32,
+    pub target_radius: f32,
     pub mouse_sensitivity: f32,
     pub zoom_sensitivity: f32,
     pub zoom_bounds: (f32, f32),
@@ -38,10 +44,11 @@ pub fn spawn_camera(mut commands: Commands) {
         },
         CameraDefault {
             focus: Vec3::new(0.0, 0.0, 0.0),
-            mouse_sensitivity: 2.0,
+            mouse_sensitivity: MOUSE_SENSITIVITY,
             radius: 10.0,
-            zoom_sensitivity: 1.0,
-            zoom_bounds: (5.0, 70.0),
+            target_radius: 10.0,
+            zoom_sensitivity: ZOOM_SENSITIVITY,
+            zoom_bounds: ZOOM_BOUNDS,
             button: MouseButton::Right,
         },
     ));
@@ -53,6 +60,7 @@ pub fn orbit_mouse(
     mut mouse_evr: EventReader<MouseMotion>,
     player_q: Query<&Transform, (With<Player>, Without<CameraDefault>)>,
     buttons: Res<Input<MouseButton>>,
+    time: Res<Time>,
 ) {
     let mut rotation = Vec2::ZERO;
     for ev in mouse_evr.iter() {
@@ -62,7 +70,7 @@ pub fn orbit_mouse(
     let Ok((mut cam, mut cam_transform)) = cam_q.get_single_mut() else { return };
     let Ok(player_transform) = player_q.get_single() else { return };
 
-    rotation *= cam.mouse_sensitivity;
+    rotation *= cam.mouse_sensitivity * time.delta_seconds() * 10.0;
     cam.focus = player_transform.translation;
 
     if rotation.length_squared() > 0.0 {
@@ -91,7 +99,14 @@ pub fn orbit_mouse(
         }
     }
     let rot_matrix = Mat3::from_quat(cam_transform.rotation);
-    cam_transform.translation = cam.focus + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, cam.radius));
+
+    cam_transform.translation = (cam.focus + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, cam.radius)));
+
+    cam.radius = lerp(
+        cam.radius,
+        cam.target_radius,
+        time.delta_seconds() * ZOOM_SPEED,
+    );
 }
 
 pub fn zoom_mouse(mut scroll_evr: EventReader<MouseWheel>, mut cam_q: Query<&mut CameraDefault>) {
@@ -101,9 +116,13 @@ pub fn zoom_mouse(mut scroll_evr: EventReader<MouseWheel>, mut cam_q: Query<&mut
     }
 
     if let Ok(mut cam) = cam_q.get_single_mut() {
-        if scroll.abs() >= 0.0 {
-            let new_radius = cam.radius - scroll * cam.radius * 0.1 * cam.zoom_sensitivity;
-            cam.radius = new_radius.clamp(cam.zoom_bounds.0, cam.zoom_bounds.1);
+        if scroll != 0.0 {
+            let new_radius = cam.radius - scroll * cam.radius * cam.zoom_sensitivity * 0.01;
+            cam.target_radius = new_radius.clamp(cam.zoom_bounds.0, cam.zoom_bounds.1);
         }
     }
+}
+
+fn lerp(a: f32, b: f32, t: f32) -> f32 {
+    a + (b - a) * t
 }

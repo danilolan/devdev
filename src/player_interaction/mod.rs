@@ -70,6 +70,7 @@ pub fn plane_movement(
         }
 
         smooth_movement.change_translation(direction * time.delta_seconds(), time.delta_seconds());
+        //println!("{:?}", transform.translation)
     }
 }
 
