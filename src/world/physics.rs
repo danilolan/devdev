@@ -1,6 +1,6 @@
 //file used to declare components, systems... to use in world physics
 
-use bevy::{gizmos, prelude::*};
+use bevy::{gizmos, prelude::*, transform};
 
 pub struct PhysicsPlugin;
 
@@ -8,10 +8,75 @@ impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, show_colliders);
         app.add_systems(Update, handle_colliders);
+        app.add_systems(Update, handle_smooth_movement);
+        app.add_systems(Update, handle_lerp_movement);
     }
 }
 
-//systems
+//smooth movement
+#[derive(Component)]
+pub struct SmoothMovement {
+    translation: Vec3,
+    velocity: Vec3,
+    acceleration: f32,
+    desaceleration: f32,
+    max_velocity: f32,
+}
+
+impl SmoothMovement {
+    pub fn new(
+        translation: Vec3,
+        acceleration: f32,
+        desaceleration: f32,
+        max_velocity: f32,
+        velocity: Vec3,
+    ) -> Self {
+        Self {
+            translation,
+            acceleration,
+            desaceleration,
+            max_velocity,
+            velocity,
+        }
+    }
+
+    pub fn change_translation(&mut self, direction: Vec3, dt: f32) {
+        if direction.length().abs() > 0.0 {
+            // apply acceleration
+            self.velocity += direction.normalize() * self.acceleration * dt;
+        } else {
+            // apply desacceleration
+            if self.velocity.length().abs() > 0.0 {
+                self.velocity -= self.velocity.normalize() * self.desaceleration * dt;
+            } else {
+                self.velocity = Vec3::ZERO;
+            }
+        }
+
+        // limit max velocity
+        if self.velocity.length() > self.max_velocity {
+            self.velocity = self.velocity.normalize() * self.max_velocity;
+        }
+
+        // move the transform
+        self.translation += self.velocity * dt;
+
+        // avoid tiny velocitys
+        if self.velocity.length() < 0.01 {
+            self.velocity = Vec3::ZERO;
+        }
+    }
+}
+
+fn handle_smooth_movement(
+    mut query: Query<(&mut Transform, &SmoothMovement), With<SmoothMovement>>,
+) {
+    for (mut transform, movement) in query.iter_mut() {
+        transform.translation = movement.translation;
+    }
+}
+
+//collider
 fn handle_colliders(mut collider_query: Query<(&mut BoxCollider, &Transform), With<BoxCollider>>) {
     for (mut collider, transform) in collider_query.iter_mut() {
         let translation = transform.translation;
@@ -25,7 +90,7 @@ fn handle_colliders(mut collider_query: Query<(&mut BoxCollider, &Transform), Wi
         collider.rotation = rotation;
     }
 }
-const SHOW_COLLIDERS: bool = true;
+const SHOW_COLLIDERS: bool = false;
 fn show_colliders(mut gizmos: Gizmos, collider_query: Query<&BoxCollider, With<BoxCollider>>) {
     if !SHOW_COLLIDERS {
         return;
@@ -41,10 +106,40 @@ fn show_colliders(mut gizmos: Gizmos, collider_query: Query<&BoxCollider, With<B
         )
     }
 }
-//collider
 #[derive(Component)]
 pub struct BoxCollider {
     pub scale: Vec3,
     pub translation: Vec3,
     pub rotation: Quat,
+}
+
+//----lerp movement----
+#[derive(Component)]
+pub struct LerpMovement {
+    pub target_position: Vec3,
+    pub current_position: Vec3,
+    pub speed: f32,
+}
+
+impl LerpMovement {
+    pub fn new(speed: f32, start_translation: Vec3) -> Self {
+        Self {
+            target_position: start_translation,
+            current_position: start_translation,
+            speed,
+        }
+    }
+    pub fn set_target(&mut self, target: Vec3) {
+        self.target_position = target;
+    }
+}
+
+fn handle_lerp_movement(time: Res<Time>, mut query: Query<(&mut LerpMovement, &mut Transform)>) {
+    for (mut lerp_movement, mut transform) in query.iter_mut() {
+        let t = lerp_movement.speed * time.delta_seconds();
+        lerp_movement.current_position = lerp_movement
+            .current_position
+            .lerp(lerp_movement.target_position, t);
+        transform.translation = lerp_movement.current_position;
+    }
 }
