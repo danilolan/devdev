@@ -9,6 +9,8 @@ use selection::SelectionPlugin;
 pub mod building;
 use building::BuildingPlugin;
 
+use crate::world::physics::SmoothMovement;
+
 pub struct PlayerInteractionPlugin;
 
 impl Plugin for PlayerInteractionPlugin {
@@ -35,19 +37,18 @@ const SPEED: f32 = 10.0;
 pub fn spawn_player(mut commands: Commands) {
     commands.spawn((
         Player {},
-        Transform {
-            ..Default::default()
-        },
+        SmoothMovement::new(Vec3::default(), 0.03, 0.002, 0.0),
+        Transform::default(),
         Name::new("player"),
     ));
 }
 
 pub fn plane_movement(
-    mut player_query: Query<&mut Transform, With<Player>>,
+    mut player_query: Query<(&mut SmoothMovement, &Transform), With<Player>>,
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
 ) {
-    if let Ok(mut transform) = player_query.get_single_mut() {
+    if let Ok((mut smooth_movement, transform)) = player_query.get_single_mut() {
         let mut direction = Vec3::ZERO;
 
         if keyboard_input.pressed(KeyCode::W) {
@@ -68,7 +69,8 @@ pub fn plane_movement(
             direction = transform.rotation.mul_vec3(direction);
         }
 
-        transform.translation += direction * SPEED * time.delta_seconds();
+        smooth_movement
+            .change_translation(transform.translation + direction * SPEED * time.delta_seconds());
     }
 }
 
