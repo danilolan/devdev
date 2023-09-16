@@ -9,10 +9,17 @@ pub struct BuildingPlugin;
 impl Plugin for BuildingPlugin {
     fn build(&self, app: &mut App) {
         //systems
-        app.add_systems(Update, handle_building);
+        app.add_systems(Update, handle_state);
+        app.add_systems(
+            Update,
+            handle_building.run_if(in_state(BuildingState::WALLS)),
+        );
 
         //resources
         app.init_resource::<MousePoints>();
+
+        //states
+        app.add_state::<BuildingState>();
     }
 }
 
@@ -38,7 +45,23 @@ impl MousePoints {
     }
 }
 
+const WALLSKEY: KeyCode = KeyCode::F1;
+const WINDOWS_KEY: KeyCode = KeyCode::F2;
+const DESTROYING_KEY: KeyCode = KeyCode::F3;
+
 //----systems----
+fn handle_state(mut app_state: ResMut<NextState<BuildingState>>, keys: Res<Input<KeyCode>>) {
+    if keys.just_pressed(WALLSKEY) {
+        app_state.set(BuildingState::WALLS);
+    }
+    if keys.just_released(WINDOWS_KEY) {
+        app_state.set(BuildingState::WINDOWS);
+    }
+    if keys.pressed(DESTROYING_KEY) {
+        app_state.set(BuildingState::DESTROYING);
+    }
+}
+
 fn handle_building(
     picking: Res<PickingData>,
     grid: Res<Grid>,
@@ -68,4 +91,12 @@ fn handle_building(
         //reset
         mouse_points.reset();
     }
+}
+
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
+pub enum BuildingState {
+    #[default]
+    WALLS,
+    WINDOWS,
+    DESTROYING,
 }

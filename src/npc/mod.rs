@@ -16,7 +16,7 @@ impl Plugin for NpcPlugin {
 pub struct Employee {
     pub experience: u32,
     pub level: u32,
-    pub role: Role,
+    pub Role: Role,
     pub needs: Needs,
     pub atributtes: Atributtes,
 
@@ -32,7 +32,7 @@ impl Default for Employee {
         Employee {
             experience: 0,
             level: 0,
-            role: Role::None,
+            Role: Role::None,
             xp_factor: XP_FACTOR,
             xp_power: XP_POWER,
             needs: Needs {
