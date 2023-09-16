@@ -12,6 +12,7 @@ pub struct WallsPlugin;
 impl Plugin for WallsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, handle_walls);
+        app.add_systems(Update, handle_windows);
         app.add_systems(Startup, start_walls);
         app.init_resource::<WallPoints>();
     }
@@ -87,15 +88,51 @@ fn handle_walls(
                     ..Default::default()
                 }),
             )
-            .insert(Name::from("pillar".to_string()));
+            .insert(Name::from("window".to_string()));
     }
     walls_points.pillars.clear();
+}
+
+fn handle_windows(
+    mut walls_points: ResMut<WallPoints>,
+    server: Res<AssetServer>,
+    mut commands: Commands,
+    grid: Res<Grid>,
+) {
+    if !walls_points.is_changed() {
+        return;
+    }
+
+    let window: Handle<Scene> = server.load("./models/window.gltf#Scene0");
+
+    let rotation = Quat::from_rotation_arc(Vec3::X, Vec3::X.normalize());
+    if let Some(point) = walls_points.window {
+        let translation = grid.coord_to_tile(point);
+
+        commands
+            .spawn(
+                (SceneBundle {
+                    scene: window.clone(),
+                    transform: Transform {
+                        translation,
+                        rotation,
+                        scale: Vec3::ONE,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                }),
+            )
+            .insert(Name::from("window".to_string()));
+    }
+
+    walls_points.window = None;
 }
 
 //----resources----
 #[derive(Resource)]
 pub struct WallPoints {
     line: Option<[[i32; 2]; 2]>,
+    window: Option<[i32; 2]>,
     pillars: Vec<[i32; 2]>,
     points: Vec<[i32; 2]>,
     connections: Vec<[usize; 2]>,
@@ -156,12 +193,17 @@ impl WallPoints {
             }
         }
     }
+
+    pub fn add_window(&mut self, point: [i32; 2]) {
+        self.window = Some(point);
+    }
 }
 
 impl Default for WallPoints {
     fn default() -> Self {
         WallPoints {
             line: None,
+            window: None,
             pillars: Vec::new(),
             points: Vec::new(),
             connections: Vec::new(),
