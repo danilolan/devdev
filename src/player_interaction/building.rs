@@ -12,7 +12,7 @@ impl Plugin for BuildingPlugin {
         app.add_systems(Update, handle_state);
         app.add_systems(
             Update,
-            handle_building.run_if(in_state(BuildingState::WALLS)),
+            handle_building_walls.run_if(in_state(BuildingState::WALLS)),
         );
 
         //resources
@@ -62,7 +62,7 @@ fn handle_state(mut app_state: ResMut<NextState<BuildingState>>, keys: Res<Input
     }
 }
 
-fn handle_building(
+fn handle_building_walls(
     picking: Res<PickingData>,
     grid: Res<Grid>,
     buttons: Res<Input<MouseButton>>,
@@ -90,6 +90,19 @@ fn handle_building(
 
         //reset
         mouse_points.reset();
+    }
+}
+
+fn handle_building_windows(
+    picking: Res<PickingData>,
+    grid: Res<Grid>,
+    buttons: Res<Input<MouseButton>>,
+    mut wall_points: ResMut<WallPoints>,
+) {
+    if buttons.just_pressed(MouseButton::Left) {
+        //get first point
+        let hit_point = picking.get_hit_in_ground();
+        let hit_coord = grid.world_to_coord(hit_point);
     }
 }
 
