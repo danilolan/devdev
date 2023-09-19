@@ -31,15 +31,9 @@ pub fn handle_tiles(
         return;
     }
 
-    /* for i in 0..50 {
-        let mut string = "".to_string();
-        for j in 0..50 {
-            string = string + &building_tiles.tiles[i][j].room.to_string() + "-";
-        }
-        println!("{:?}", string);
-    } */
+    let recently_updated_tiles = building_tiles.recently_updated_tiles.clone();
 
-    for &[x, y] in &building_tiles.recently_updated_tiles {
+    for &[x, y] in &recently_updated_tiles {
         // Get the current tile's information
         let tile_data = &building_tiles.tiles[x as usize][y as usize];
 
@@ -89,7 +83,8 @@ pub fn handle_tiles(
         }
     }
 
-    &building_tiles.recently_updated_tiles.clear();
+    building_tiles.recently_updated_tiles.clear();
+    println!("{:?}", building_tiles.recently_updated_tiles)
 }
 
 const TILE_SIZE: f32 = 1.0;
@@ -167,9 +162,6 @@ impl BuildingTiles {
                     0
                 },
             ];
-
-            println!("{:?}", [x, y]);
-            println!("{:?}", directions);
 
             // Set the current tile with the new wall directions
             self.tiles[x][y].directions = directions;
