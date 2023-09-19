@@ -82,7 +82,10 @@ impl PickingData {
         self.calculate_tmin_tmax(transform).is_some()
     }
 
-    pub fn get_hit_point(&self, collider_query: Query<(Entity, &BoxCollider)>) -> Option<(Vec3)> {
+    pub fn get_hit_point(
+        &self,
+        collider_query: Query<(Entity, &BoxCollider)>,
+    ) -> Option<(Entity, Vec3)> {
         for (entity, collider) in collider_query.iter() {
             let transform = Transform {
                 translation: collider.translation,
@@ -98,7 +101,7 @@ impl PickingData {
                 let hit_point_local = local_origin + tmin * local_direction;
                 let hit_point_world = transform.rotation * hit_point_local + transform.translation;
 
-                return Some(hit_point_world);
+                return Some((entity, hit_point_world));
             }
         }
 

@@ -1,9 +1,10 @@
-use bevy::prelude::*;
+use bevy::{gizmos, prelude::*};
 
 pub struct GridPlugin;
 
 impl Plugin for GridPlugin {
     fn build(&self, app: &mut App) {
+        //app.add_systems(Update, show_grid);
         //resources
         app.init_resource::<Grid>();
     }
@@ -41,5 +42,25 @@ impl Grid {
         let index = self.world_to_coord(position);
         let tile = self.coord_to_tile(index);
         tile
+    }
+}
+
+fn show_grid(grid: Res<Grid>, mut gizmos: Gizmos) {
+    for i in 0..100 {
+        for j in 0..100 {
+            let position = grid.coord_to_tile([i, j]);
+            let rotation = Quat::from_rotation_x(std::f32::consts::PI / 2.0);
+            gizmos.rect(
+                position,
+                rotation,
+                Vec2::new(grid.tile_size, grid.tile_size),
+                Color::Rgba {
+                    red: 0.2,
+                    green: 0.2,
+                    blue: 0.2,
+                    alpha: 0.2,
+                },
+            )
+        }
     }
 }
