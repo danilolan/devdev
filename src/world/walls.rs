@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::world::grid::Grid;
 use bevy::{
     gizmos,
@@ -84,7 +86,6 @@ pub fn handle_tiles(
     }
 
     building_tiles.recently_updated_tiles.clear();
-    println!("{:?}", building_tiles.recently_updated_tiles)
 }
 
 const TILE_SIZE: f32 = 1.0;
@@ -106,7 +107,7 @@ struct Tile {
 pub struct BuildingTiles {
     pub grid: Grid,
     tiles: Vec<Vec<Tile>>,
-    recently_updated_tiles: Vec<[i32; 2]>,
+    recently_updated_tiles: HashSet<[i32; 2]>,
 }
 
 impl Default for BuildingTiles {
@@ -121,41 +122,37 @@ impl Default for BuildingTiles {
                 tile_size: TILE_SIZE,
             },
             tiles: vec![vec![tile.clone(); WORLD_SIZE]; WORLD_SIZE],
-            recently_updated_tiles: Vec::new(),
+            recently_updated_tiles: HashSet::new(),
         }
     }
 }
 
 impl BuildingTiles {
     fn calc_walls_in_tiles(&mut self) {
+        let mut tiles_to_update: HashSet<[i32; 2]> = HashSet::new();
+
         for &[i, j] in &self.recently_updated_tiles {
             let x = i as usize;
             let y = j as usize;
 
-            // Get the current room
             let current_room = self.tiles[x][y].room;
 
-            // Check the tiles around to determine where the walls should be placed
             let directions = [
-                // Check if it is at the top boundary or if the room above is different
                 if y == 0 || self.tiles[x][y - 1].room != current_room {
                     1
                 } else {
                     0
                 },
-                // Check if it is at the right boundary or if the room to the right is different
                 if x == WORLD_SIZE - 1 || self.tiles[x + 1][y].room != current_room {
                     1
                 } else {
                     0
                 },
-                // Check if it is at the bottom boundary or if the room below is different
                 if y == WORLD_SIZE - 1 || self.tiles[x][y + 1].room != current_room {
                     1
                 } else {
                     0
                 },
-                // Check if it is at the left boundary or if the room to the left is different
                 if x == 0 || self.tiles[x - 1][y].room != current_room {
                     1
                 } else {
@@ -163,10 +160,29 @@ impl BuildingTiles {
                 },
             ];
 
-            // Set the current tile with the new wall directions
             self.tiles[x][y].directions = directions;
+
+            tiles_to_update.insert([x as i32, y as i32]);
+
+            // Adicionar tiles adjacentes para revisão
+            if x > 0 {
+                tiles_to_update.insert([x as i32 - 1, y as i32]);
+            }
+            if x < WORLD_SIZE - 1 {
+                tiles_to_update.insert([x as i32 + 1, y as i32]);
+            }
+            if y > 0 {
+                tiles_to_update.insert([x as i32, y as i32 - 1]);
+            }
+            if y < WORLD_SIZE - 1 {
+                tiles_to_update.insert([x as i32, y as i32 + 1]);
+            }
         }
+
+        self.recently_updated_tiles.extend(tiles_to_update);
+        println!("{:?}", self.recently_updated_tiles);
     }
+
     //set just one tile to a room number
     pub fn set_room_to_tile(&mut self, position: [i32; 2]) {
         if Self::check_position_in_range(position) {
@@ -179,7 +195,7 @@ impl BuildingTiles {
         self.tiles[x][y].room = ROOM;
 
         // Add the tile to the list of recently updated tiles
-        self.recently_updated_tiles.push([x as i32, y as i32]);
+        self.recently_updated_tiles.insert([x as i32, y as i32]);
 
         //calculating the walls for each updated tiles
         self.calc_walls_in_tiles();
@@ -202,7 +218,7 @@ impl BuildingTiles {
                 self.tiles[x][y].room = ROOM;
 
                 // Add the tile to the list of recently updated tiles
-                self.recently_updated_tiles.push([x as i32, y as i32]);
+                self.recently_updated_tiles.insert([x as i32, y as i32]);
             }
         }
 
