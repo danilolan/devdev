@@ -1,10 +1,11 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::world::grid::Grid;
 use bevy::{
     gizmos,
     prelude::*,
     render::{mesh::Indices, render_resource::PrimitiveTopology},
+    transform,
 };
 
 use super::physics::BoxCollider;
@@ -14,38 +15,48 @@ pub struct WallsPlugin;
 impl Plugin for WallsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<BuildingTiles>();
-        app.add_systems(Update, handle_tiles);
         app.add_systems(Update, show_tiles);
+        app.add_systems(Update, (despawn_phase, render_walls).chain());
     }
 }
 
-use bevy::prelude::*;
-
-// ...
-
-pub fn handle_tiles(
+pub fn despawn_phase(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut building_tiles: ResMut<BuildingTiles>,
+    building_tiles: Res<BuildingTiles>,
+    query: Query<(Entity, &Wall)>,
 ) {
-    if !building_tiles.is_changed() {
-        return;
-    }
-
     let recently_updated_tiles = building_tiles.recently_updated_tiles.clone();
 
-    for &[x, y] in &recently_updated_tiles {
-        // Get the current tile's information
-        let tile_data = &building_tiles.tiles[x as usize][y as usize];
+    let mut to_despawn = HashSet::new();
 
-        // Get the world center position of the current tile
+    for &[x, y] in &recently_updated_tiles {
+        for (entity, wall) in query.iter() {
+            if wall.position[0] == x && wall.position[1] == y {
+                to_despawn.insert(entity);
+            }
+        }
+    }
+
+    for entity in to_despawn {
+        commands.entity(entity).despawn();
+    }
+}
+
+pub fn render_walls(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut building_tiles: ResMut<BuildingTiles>,
+) {
+    let recently_updated_tiles = building_tiles.recently_updated_tiles.clone();
+
+    let mut to_spawn = Vec::new();
+
+    for &[x, y] in &recently_updated_tiles {
+        let tile_data = &building_tiles.tiles[x as usize][y as usize];
         let center_pos = building_tiles.grid.coord_to_tile([x, y]);
 
-        // For each direction, check if a wall should be spawned
         for (i, &wall_exists) in tile_data.directions.iter().enumerate() {
             if wall_exists != 0 {
-                // Determine rotation and position based on the direction
                 let (rotation, offset) = match i {
                     0 => (
                         Quat::from_rotation_y(std::f32::consts::FRAC_PI_2),
@@ -66,26 +77,39 @@ pub fn handle_tiles(
                     _ => unreachable!(),
                 };
 
-                // Create the entity with the appropriate mesh, material, and transformation
                 let wall: Handle<Scene> = asset_server.load("./models/wall.gltf#Scene0");
-                commands
-                    .spawn(
-                        (SceneBundle {
-                            scene: wall.clone(),
-                            transform: Transform {
-                                translation: center_pos + offset,
-                                rotation,
-                                ..Default::default()
-                            },
+
+                to_spawn.push((
+                    SceneBundle {
+                        scene: wall.clone(),
+                        transform: Transform {
+                            translation: center_pos + offset,
+                            rotation,
                             ..Default::default()
-                        }),
-                    )
-                    .insert(Name::from("wall".to_string()));
+                        },
+                        ..Default::default()
+                    },
+                    Wall {
+                        position: [x, y],
+                        direction: i,
+                    },
+                    Name::from("wall".to_string()),
+                ));
             }
         }
     }
+    // Spawn todas as novas entidades
+    for entity in to_spawn {
+        commands.spawn(entity);
+    }
 
     building_tiles.recently_updated_tiles.clear();
+}
+
+#[derive(Component)]
+pub struct Wall {
+    position: [i32; 2],
+    direction: usize,
 }
 
 const TILE_SIZE: f32 = 1.0;
@@ -108,6 +132,7 @@ pub struct BuildingTiles {
     pub grid: Grid,
     tiles: Vec<Vec<Tile>>,
     recently_updated_tiles: HashSet<[i32; 2]>,
+    pub wall_index: HashMap<[i32; 2], Vec<Entity>>,
 }
 
 impl Default for BuildingTiles {
@@ -123,6 +148,7 @@ impl Default for BuildingTiles {
             },
             tiles: vec![vec![tile.clone(); WORLD_SIZE]; WORLD_SIZE],
             recently_updated_tiles: HashSet::new(),
+            wall_index: HashMap::new(),
         }
     }
 }
@@ -160,6 +186,8 @@ impl BuildingTiles {
                 },
             ];
 
+            println!("{:?}", directions);
+
             self.tiles[x][y].directions = directions;
 
             tiles_to_update.insert([x as i32, y as i32]);
@@ -180,7 +208,6 @@ impl BuildingTiles {
         }
 
         self.recently_updated_tiles.extend(tiles_to_update);
-        println!("{:?}", self.recently_updated_tiles);
     }
 
     //set just one tile to a room number
