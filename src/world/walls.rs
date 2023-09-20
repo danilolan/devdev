@@ -16,29 +16,7 @@ impl Plugin for WallsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<BuildingTiles>();
         app.add_systems(Update, show_tiles);
-        app.add_systems(Update, (despawn_phase, render_walls).chain());
-    }
-}
-
-pub fn despawn_phase(
-    mut commands: Commands,
-    building_tiles: Res<BuildingTiles>,
-    query: Query<(Entity, &Wall)>,
-) {
-    let recently_updated_tiles = building_tiles.recently_updated_tiles.clone();
-
-    let mut to_despawn = HashSet::new();
-
-    for &[x, y] in &recently_updated_tiles {
-        for (entity, wall) in query.iter() {
-            if wall.position[0] == x && wall.position[1] == y {
-                to_despawn.insert(entity);
-            }
-        }
-    }
-
-    for entity in to_despawn {
-        commands.entity(entity).despawn();
+        app.add_systems(Update, render_walls);
     }
 }
 
@@ -46,6 +24,7 @@ pub fn render_walls(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut building_tiles: ResMut<BuildingTiles>,
+    mut gizmos: Gizmos,
 ) {
     let recently_updated_tiles = building_tiles.recently_updated_tiles.clone();
 
@@ -77,6 +56,20 @@ pub fn render_walls(
                     _ => unreachable!(),
                 };
 
+                let mut translation = center_pos + offset;
+                translation.y = 1.5 / 2.0;
+
+                println!("{:?}", translation);
+
+                gizmos.cuboid(
+                    Transform {
+                        translation,
+                        rotation,
+                        scale: Vec3::new(0.2, 1.5, 1.2),
+                    },
+                    Color::BLUE,
+                );
+
                 let wall: Handle<Scene> = asset_server.load("./models/wall.gltf#Scene0");
 
                 to_spawn.push((
@@ -100,10 +93,10 @@ pub fn render_walls(
     }
     // Spawn todas as novas entidades
     for entity in to_spawn {
-        commands.spawn(entity);
+        //commands.spawn(entity);
     }
 
-    building_tiles.recently_updated_tiles.clear();
+    //building_tiles.recently_updated_tiles.clear();
 }
 
 #[derive(Component)]
@@ -155,59 +148,35 @@ impl Default for BuildingTiles {
 
 impl BuildingTiles {
     fn calc_walls_in_tiles(&mut self) {
-        let mut tiles_to_update: HashSet<[i32; 2]> = HashSet::new();
-
         for &[i, j] in &self.recently_updated_tiles {
             let x = i as usize;
             let y = j as usize;
 
-            let current_room = self.tiles[x][y].room;
-
             let directions = [
-                if y == 0 || self.tiles[x][y - 1].room != current_room {
+                if y == 0 || self.tiles[x][y - 1].room != ROOM {
                     1
                 } else {
                     0
                 },
-                if x == WORLD_SIZE - 1 || self.tiles[x + 1][y].room != current_room {
+                if x == WORLD_SIZE - 1 || self.tiles[x + 1][y].room != ROOM {
                     1
                 } else {
                     0
                 },
-                if y == WORLD_SIZE - 1 || self.tiles[x][y + 1].room != current_room {
+                if y == WORLD_SIZE - 1 || self.tiles[x][y + 1].room != ROOM {
                     1
                 } else {
                     0
                 },
-                if x == 0 || self.tiles[x - 1][y].room != current_room {
+                if x == 0 || self.tiles[x - 1][y].room != ROOM {
                     1
                 } else {
                     0
                 },
             ];
 
-            println!("{:?}", directions);
-
             self.tiles[x][y].directions = directions;
-
-            tiles_to_update.insert([x as i32, y as i32]);
-
-            // Adicionar tiles adjacentes para revisão
-            if x > 0 {
-                tiles_to_update.insert([x as i32 - 1, y as i32]);
-            }
-            if x < WORLD_SIZE - 1 {
-                tiles_to_update.insert([x as i32 + 1, y as i32]);
-            }
-            if y > 0 {
-                tiles_to_update.insert([x as i32, y as i32 - 1]);
-            }
-            if y < WORLD_SIZE - 1 {
-                tiles_to_update.insert([x as i32, y as i32 + 1]);
-            }
         }
-
-        self.recently_updated_tiles.extend(tiles_to_update);
     }
 
     //set just one tile to a room number
@@ -221,8 +190,36 @@ impl BuildingTiles {
         //seting the room
         self.tiles[x][y].room = ROOM;
 
+        // puting adjacents
+        let mut tiles_to_update: HashSet<[i32; 2]> = HashSet::new();
+
+        tiles_to_update.insert([x as i32, y as i32]);
+
+        // Adicionar tiles adjacentes para revisão
+        if x > 0 {
+            if self.tiles[x - 1][y].room == ROOM {
+                tiles_to_update.insert([x as i32 - 1, y as i32]);
+            }
+        }
+        if x < WORLD_SIZE - 1 {
+            if self.tiles[x + 1][y].room == ROOM {
+                tiles_to_update.insert([x as i32 + 1, y as i32]);
+            }
+        }
+        if y > 0 {
+            if self.tiles[x][y - 1].room == ROOM {
+                tiles_to_update.insert([x as i32, y as i32 - 1]);
+            }
+        }
+        if y < WORLD_SIZE - 1 {
+            if self.tiles[x][y + 1].room == ROOM {
+                tiles_to_update.insert([x as i32, y as i32 + 1]);
+            }
+        }
+
         // Add the tile to the list of recently updated tiles
         self.recently_updated_tiles.insert([x as i32, y as i32]);
+        self.recently_updated_tiles.extend(tiles_to_update);
 
         //calculating the walls for each updated tiles
         self.calc_walls_in_tiles();
@@ -242,10 +239,8 @@ impl BuildingTiles {
         //seting each tile of square
         for x in x_min..=x_max {
             for y in y_min..=y_max {
-                self.tiles[x][y].room = ROOM;
-
                 // Add the tile to the list of recently updated tiles
-                self.recently_updated_tiles.insert([x as i32, y as i32]);
+                self.set_room_to_tile([x as i32, y as i32]);
             }
         }
 

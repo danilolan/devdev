@@ -26,7 +26,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(WorldInspectorPlugin::new())
         //fps
-        .add_plugins(FrameTimeDiagnosticsPlugin::default())
+        //.add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(LogDiagnosticsPlugin::default())
         //Plugins
         .add_plugins(PlayerInteractionPlugin)
