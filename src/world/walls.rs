@@ -187,41 +187,18 @@ impl BuildingTiles {
 
         let (x, y) = (position[0] as usize, position[1] as usize);
 
-        //seting the room
+        // setting the room
         self.tiles[x][y].room = ROOM;
-
-        // puting adjacents
-        let mut tiles_to_update: HashSet<[i32; 2]> = HashSet::new();
-
-        tiles_to_update.insert([x as i32, y as i32]);
-
-        // Adicionar tiles adjacentes para revisão
-        if x > 0 {
-            if self.tiles[x - 1][y].room == ROOM {
-                tiles_to_update.insert([x as i32 - 1, y as i32]);
-            }
-        }
-        if x < WORLD_SIZE - 1 {
-            if self.tiles[x + 1][y].room == ROOM {
-                tiles_to_update.insert([x as i32 + 1, y as i32]);
-            }
-        }
-        if y > 0 {
-            if self.tiles[x][y - 1].room == ROOM {
-                tiles_to_update.insert([x as i32, y as i32 - 1]);
-            }
-        }
-        if y < WORLD_SIZE - 1 {
-            if self.tiles[x][y + 1].room == ROOM {
-                tiles_to_update.insert([x as i32, y as i32 + 1]);
-            }
-        }
 
         // Add the tile to the list of recently updated tiles
         self.recently_updated_tiles.insert([x as i32, y as i32]);
+
+        // Add adjacent tiles to the update set
+        let mut tiles_to_update: HashSet<[i32; 2]> = HashSet::new();
+        Self::add_adjacent_tiles(x, y, &self.tiles, &mut tiles_to_update);
         self.recently_updated_tiles.extend(tiles_to_update);
 
-        //calculating the walls for each updated tiles
+        // Calculate the walls for each updated tile
         self.calc_walls_in_tiles();
     }
 
@@ -257,6 +234,21 @@ impl BuildingTiles {
         }
 
         return false;
+    }
+
+    fn add_adjacent_tiles(x: usize, y: usize, tiles: &Vec<Vec<Tile>>, set: &mut HashSet<[i32; 2]>) {
+        if x > 0 && tiles[x - 1][y].room == ROOM {
+            set.insert([x as i32 - 1, y as i32]);
+        }
+        if x < WORLD_SIZE - 1 && tiles[x + 1][y].room == ROOM {
+            set.insert([x as i32 + 1, y as i32]);
+        }
+        if y > 0 && tiles[x][y - 1].room == ROOM {
+            set.insert([x as i32, y as i32 - 1]);
+        }
+        if y < WORLD_SIZE - 1 && tiles[x][y + 1].room == ROOM {
+            set.insert([x as i32, y as i32 + 1]);
+        }
     }
 }
 
