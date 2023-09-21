@@ -28,30 +28,36 @@ pub fn render_walls(
 ) {
     let recently_updated_tiles = building_tiles.recently_updated_tiles.clone();
 
-    let mut to_spawn = Vec::new();
-
     for &[x, y] in &recently_updated_tiles {
-        let tile_data = &building_tiles.tiles[x as usize][y as usize];
+        let tile_size = building_tiles.grid.tile_size;
         let center_pos = building_tiles.grid.coord_to_tile([x, y]);
+
+        let tile_data = &mut building_tiles.tiles[x as usize][y as usize];
+
+        for entity_option in tile_data.entities.iter_mut() {
+            if let Some(entity) = entity_option.take() {
+                commands.entity(entity).despawn_recursive();
+            }
+        }
 
         for (i, &wall_exists) in tile_data.directions.iter().enumerate() {
             if wall_exists != 0 {
                 let (rotation, offset) = match i {
                     0 => (
                         Quat::from_rotation_y(std::f32::consts::FRAC_PI_2),
-                        Vec3::new(0.0, 0.0, -building_tiles.grid.tile_size / 2.0),
+                        Vec3::new(0.0, 0.0, -tile_size / 2.0),
                     ),
                     1 => (
                         Quat::from_rotation_y(0.0),
-                        Vec3::new(building_tiles.grid.tile_size / 2.0, 0.0, 0.0),
+                        Vec3::new(tile_size / 2.0, 0.0, 0.0),
                     ),
                     2 => (
                         Quat::from_rotation_y(std::f32::consts::FRAC_PI_2),
-                        Vec3::new(0.0 / 2.0, 0.0, building_tiles.grid.tile_size / 2.0),
+                        Vec3::new(0.0 / 2.0, 0.0, tile_size / 2.0),
                     ),
                     3 => (
                         Quat::from_rotation_y(0.0),
-                        Vec3::new(-building_tiles.grid.tile_size / 2.0, 0.0, 0.0),
+                        Vec3::new(-tile_size / 2.0, 0.0, 0.0),
                     ),
                     _ => unreachable!(),
                 };
@@ -59,50 +65,41 @@ pub fn render_walls(
                 let mut translation = center_pos + offset;
                 translation.y = 1.5 / 2.0;
 
-                println!("{:?}", translation);
-
-                gizmos.cuboid(
-                    Transform {
-                        translation,
-                        rotation,
-                        scale: Vec3::new(0.2, 1.5, 1.2),
-                    },
-                    Color::BLUE,
-                );
-
                 let wall: Handle<Scene> = asset_server.load("./models/wall.gltf#Scene0");
 
-                to_spawn.push((
-                    SceneBundle {
-                        scene: wall.clone(),
-                        transform: Transform {
-                            translation: center_pos + offset,
-                            rotation,
+                let entity = commands
+                    .spawn((
+                        SceneBundle {
+                            scene: wall.clone(),
+                            transform: Transform {
+                                translation: center_pos + offset,
+                                rotation,
+                                ..Default::default()
+                            },
                             ..Default::default()
                         },
-                        ..Default::default()
-                    },
-                    Wall {
-                        position: [x, y],
-                        direction: i,
-                    },
-                    Name::from("wall".to_string()),
-                ));
+                        Name::from(y.to_string()),
+                    ))
+                    .id();
+
+                tile_data.entities[i] = Some(entity);
             }
         }
     }
-    // Spawn todas as novas entidades
-    for entity in to_spawn {
-        //commands.spawn(entity);
+
+    for tile in &building_tiles.recently_updated_tiles {
+        println!(
+            "{:?}",
+            building_tiles.tiles[tile[0] as usize][tile[1] as usize].entities
+        )
     }
 
-    //building_tiles.recently_updated_tiles.clear();
+    building_tiles.recently_updated_tiles.clear();
 }
 
 #[derive(Component)]
 pub struct Wall {
-    position: [i32; 2],
-    direction: usize,
+    room: i32,
 }
 
 const TILE_SIZE: f32 = 1.0;
@@ -116,6 +113,7 @@ const ROOM: i32 = 1;
 #[derive(Clone)]
 struct Tile {
     directions: [i32; 4],
+    entities: [Option<Entity>; 4],
     room: i32,
 }
 
@@ -133,6 +131,7 @@ impl Default for BuildingTiles {
         let tile = Tile {
             directions: [0; 4],
             room: 0,
+            entities: [None; 4],
         };
 
         Self {
