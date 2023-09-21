@@ -87,13 +87,6 @@ pub fn render_walls(
         }
     }
 
-    for tile in &building_tiles.recently_updated_tiles {
-        println!(
-            "{:?}",
-            building_tiles.tiles[tile[0] as usize][tile[1] as usize].entities
-        )
-    }
-
     building_tiles.recently_updated_tiles.clear();
 }
 
