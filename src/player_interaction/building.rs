@@ -1,71 +1,38 @@
 use bevy::prelude::*;
 
-use crate::player_interaction::picking::PickingData;
-use crate::world::grid::Grid;
-use crate::world::walls::WallPoints;
-
 pub struct BuildingPlugin;
 
 impl Plugin for BuildingPlugin {
     fn build(&self, app: &mut App) {
-        //systems
-        app.add_systems(Update, handle_building);
+        app.add_state::<BuildingState>();
 
-        //resources
-        app.init_resource::<MousePoints>();
+        app.add_systems(Update, handle_states);
+    }
+}
+const WALL_KEY: KeyCode = KeyCode::F1;
+const WINDOW_KEY: KeyCode = KeyCode::F2;
+const DOOR_KEY: KeyCode = KeyCode::F3;
+
+fn handle_states(keys: Res<Input<KeyCode>>, mut building_state: ResMut<State<BuildingState>>) {
+    if keys.just_pressed(WALL_KEY) {}
+    if keys.just_released(WINDOW_KEY) {
+        // Left Ctrl was released
+    }
+    if keys.pressed(DOOR_KEY) {
+        // W is being held down
     }
 }
 
-//resources
-#[derive(Resource)]
-struct MousePoints {
-    points: [Option<[i32; 2]>; 2],
+#[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
+enum BuildingState {
+    Wall,
+    Window,
+    Door,
+    None,
 }
 
-impl Default for MousePoints {
+impl Default for BuildingState {
     fn default() -> Self {
-        MousePoints {
-            points: [None, None],
-        }
-    }
-}
-
-impl MousePoints {
-    fn reset(&mut self) {
-        for mut _point in self.points {
-            _point = None;
-        }
-    }
-}
-
-//----systems----
-fn handle_building(
-    picking: Res<PickingData>,
-    grid: Res<Grid>,
-    buttons: Res<Input<MouseButton>>,
-    mut wall_points: ResMut<WallPoints>,
-    mut mouse_points: ResMut<MousePoints>,
-) {
-    if buttons.just_pressed(MouseButton::Left) {
-        //get first point
-        let hit_point = picking.get_hit_in_ground();
-        mouse_points.points[0] = Some(grid.world_to_coord(hit_point));
-    }
-
-    if buttons.just_released(MouseButton::Left) {
-        //get second point
-        let hit_point = picking.get_hit_in_ground();
-        mouse_points.points[1] = Some(grid.world_to_coord(hit_point));
-
-        //change walls
-        if let (Some(first_point), Some(second_point)) =
-            (mouse_points.points[0], mouse_points.points[1])
-        {
-            wall_points.add_line([first_point, second_point]);
-            wall_points.set_changed();
-        }
-
-        //reset
-        mouse_points.reset();
+        Self::None
     }
 }
