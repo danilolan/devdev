@@ -37,9 +37,12 @@ impl ObjectToolData {
             commands.entity(entity).despawn_recursive();
         }
 
-        commands
-            .entity(entity)
-            .insert(LerpMovement::new(50.0, Vec3::ZERO));
+        commands.entity(entity).insert(LerpMovement::new(
+            25.0,
+            Vec3::ZERO,
+            Quat::default(),
+            Vec3::ONE,
+        ));
 
         self.entity = Some(entity);
     }
@@ -65,14 +68,14 @@ fn handle_object(
                 None => hit_point,
             };
 
-            lerp_movement.set_target(position);
+            lerp_movement.set_target_translation(position);
         }
     }
 }
 
 fn rotate_object(
     object_tool_data: ResMut<ObjectToolData>,
-    mut query: Query<&mut Transform>,
+    mut query: Query<(&mut Transform, &mut LerpMovement)>,
     keyboard_input: Res<Input<KeyCode>>,
 ) {
     let entity = match object_tool_data.entity {
@@ -80,17 +83,25 @@ fn rotate_object(
         None => return,
     };
 
-    let mut transform = match query.get_mut(entity) {
+    let (mut transform, mut lerp_movement) = match query.get_mut(entity) {
         Ok(transform) => transform,
         Err(_) => return,
     };
 
+    let current_y_rotation = transform.rotation.to_axis_angle().1;
+
     if keyboard_input.just_pressed(KeyCode::E) {
-        transform.rotation *= Quat::from_rotation_y(90.0_f32.to_radians());
+        let new_rotation = ((current_y_rotation + 90.0_f32.to_radians()) / (90.0_f32.to_radians()))
+            .round()
+            * 90.0_f32.to_radians();
+        lerp_movement.set_target_rotation(Quat::from_rotation_y(new_rotation));
     }
 
     if keyboard_input.just_pressed(KeyCode::Q) {
-        transform.rotation *= Quat::from_rotation_y((-90.0_f32).to_radians());
+        let new_rotation = ((current_y_rotation - 90.0_f32.to_radians()) / (90.0_f32.to_radians()))
+            .round()
+            * 90.0_f32.to_radians();
+        lerp_movement.set_target_rotation(Quat::from_rotation_y(new_rotation));
     }
 }
 

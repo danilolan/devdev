@@ -116,32 +116,72 @@ pub struct BoxCollider {
 //----lerp movement----
 #[derive(Component)]
 pub struct LerpMovement {
-    pub target_position: Option<Vec3>,
-    pub current_position: Vec3,
+    pub target_translation: Option<Vec3>,
+    pub target_rotation: Option<Quat>,
+    pub target_scale: Option<Vec3>,
     pub speed: f32,
 }
 
 impl LerpMovement {
-    pub fn new(speed: f32, start_translation: Vec3) -> Self {
+    pub fn new(speed: f32, translation: Vec3, rotation: Quat, scale: Vec3) -> Self {
         Self {
-            target_position: None,
-            current_position: start_translation,
+            target_translation: None,
+            target_rotation: None,
+            target_scale: None,
             speed,
         }
     }
-    pub fn set_target(&mut self, target: Vec3) {
-        self.target_position = Some(target);
+    pub fn set_target_translation(&mut self, target: Vec3) {
+        self.target_translation = Some(target);
+    }
+    pub fn set_target_rotation(&mut self, target: Quat) {
+        self.target_rotation = Some(target);
+    }
+    pub fn set_target_scale(&mut self, target: Vec3) {
+        self.target_scale = Some(target);
     }
 }
 
+const TRANSLATION_DIFF: f32 = 0.01;
+const ROTATION_DIFF: f32 = 0.9999;
+const SCALE_DIFF: f32 = 0.01;
+
 fn handle_lerp_movement(time: Res<Time>, mut query: Query<(&mut LerpMovement, &mut Transform)>) {
     for (mut lerp_movement, mut transform) in query.iter_mut() {
-        if let Some(target_position) = lerp_movement.target_position {
+        if let Some(target) = lerp_movement.target_translation {
             let t = lerp_movement.speed * time.delta_seconds();
+            let new_translation = transform.translation.lerp(target, t);
 
-            transform.translation = transform.translation.lerp(target_position, t);
+            if (new_translation - target).length() < TRANSLATION_DIFF {
+                transform.translation = target;
+                lerp_movement.target_translation = None;
+            } else {
+                transform.translation = new_translation;
+            }
+        }
 
-            lerp_movement.target_position = None;
+        if let Some(target) = lerp_movement.target_rotation {
+            let t = lerp_movement.speed * time.delta_seconds();
+            let new_rotation = transform.rotation.lerp(target, t);
+
+            if new_rotation.dot(target).abs() > ROTATION_DIFF {
+                transform.rotation = target;
+                lerp_movement.target_rotation = None;
+            } else {
+                transform.rotation = new_rotation;
+            }
+        }
+
+        if let Some(target) = lerp_movement.target_scale {
+            let t = lerp_movement.speed * time.delta_seconds();
+            let new_scale = transform.scale.lerp(target, t);
+
+            if (new_scale - target).length() < SCALE_DIFF {
+                transform.scale = target;
+                lerp_movement.target_scale = None;
+            } else {
+                transform.scale = new_scale;
+            }
         }
     }
 }
