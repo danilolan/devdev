@@ -13,7 +13,6 @@ impl Plugin for SelectionPlugin {
         //systems
         app.add_systems(Update, handle_object);
         app.add_systems(Update, place_object);
-        //app.add_systems(Update, test);
     }
 }
 
@@ -31,6 +30,26 @@ impl Default for ObjectToolData {
         }
     }
 }
+impl ObjectToolData {
+    pub fn set_new_entity(&mut self, entity: Entity, commands: &mut Commands) {
+        if let Some(entity) = self.entity {
+            commands.entity(entity).despawn_recursive();
+        }
+
+        commands
+            .entity(entity)
+            .insert(LerpMovement::new(50.0, Vec3::ZERO));
+
+        self.entity = Some(entity);
+    }
+
+    pub fn delete_entity(&mut self, commands: &mut Commands) {
+        if let Some(entity) = self.entity {
+            commands.entity(entity).despawn_recursive();
+            self.entity = None;
+        }
+    }
+}
 //----systems----
 fn handle_object(
     picking: Res<PickingData>,
@@ -44,6 +63,7 @@ fn handle_object(
                 Some(grid_size) => (hit_point / grid_size).round() * grid_size,
                 None => hit_point,
             };
+
             lerp_movement.set_target(position);
         }
     }
