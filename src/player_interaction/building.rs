@@ -96,7 +96,7 @@ fn handle_door(
     server: Res<AssetServer>,
     mut object_tool_data: ResMut<ObjectToolData>,
 ) {
-    let wall: Handle<Scene> = server.load("./models/wall.gltf#Scene0");
+    let wall: Handle<Scene> = server.load("./models/pillar.gltf#Scene0");
 
     if object_tool_data.entity.is_none() {
         spawn_asset(commands, wall, object_tool_data)

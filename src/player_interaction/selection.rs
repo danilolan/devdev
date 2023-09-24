@@ -27,7 +27,7 @@ impl Default for ObjectToolData {
     fn default() -> Self {
         ObjectToolData {
             entity: None,
-            grid_size: Some(0.1),
+            grid_size: Some(0.2),
         }
     }
 }
