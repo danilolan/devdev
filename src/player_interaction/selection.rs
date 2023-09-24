@@ -13,6 +13,7 @@ impl Plugin for SelectionPlugin {
         //systems
         app.add_systems(Update, handle_object);
         app.add_systems(Update, place_object);
+        app.add_systems(Update, rotate_object);
     }
 }
 
@@ -66,6 +67,30 @@ fn handle_object(
 
             lerp_movement.set_target(position);
         }
+    }
+}
+
+fn rotate_object(
+    object_tool_data: ResMut<ObjectToolData>,
+    mut query: Query<&mut Transform>,
+    keyboard_input: Res<Input<KeyCode>>,
+) {
+    let entity = match object_tool_data.entity {
+        Some(entity) => entity,
+        None => return,
+    };
+
+    let mut transform = match query.get_mut(entity) {
+        Ok(transform) => transform,
+        Err(_) => return,
+    };
+
+    if keyboard_input.just_pressed(KeyCode::E) {
+        transform.rotation *= Quat::from_rotation_y(90.0_f32.to_radians());
+    }
+
+    if keyboard_input.just_pressed(KeyCode::Q) {
+        transform.rotation *= Quat::from_rotation_y((-90.0_f32).to_radians());
     }
 }
 

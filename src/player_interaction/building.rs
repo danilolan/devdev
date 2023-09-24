@@ -61,7 +61,7 @@ fn spawn_asset(
                 rotation: Quat::default(),
             },
         ))
-        .insert(Name::from("wall".to_string()))
+        .insert(Name::from("building".to_string()))
         .id();
 
     object_tool_data.set_new_entity(entity, &mut commands);
