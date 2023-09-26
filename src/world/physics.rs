@@ -90,7 +90,7 @@ fn handle_colliders(mut collider_query: Query<(&mut BoxCollider, &Transform), Wi
         collider.rotation = rotation;
     }
 }
-const SHOW_COLLIDERS: bool = false;
+const SHOW_COLLIDERS: bool = true;
 fn show_colliders(mut gizmos: Gizmos, collider_query: Query<&BoxCollider, With<BoxCollider>>) {
     if !SHOW_COLLIDERS {
         return;
@@ -123,11 +123,16 @@ pub struct LerpMovement {
 }
 
 impl LerpMovement {
-    pub fn new(speed: f32, translation: Vec3, rotation: Quat, scale: Vec3) -> Self {
+    pub fn new(
+        speed: f32,
+        translation: Option<Vec3>,
+        rotation: Option<Quat>,
+        scale: Option<Vec3>,
+    ) -> Self {
         Self {
-            target_translation: None,
-            target_rotation: None,
-            target_scale: None,
+            target_translation: translation,
+            target_rotation: rotation,
+            target_scale: scale,
             speed,
         }
     }
@@ -139,6 +144,17 @@ impl LerpMovement {
     }
     pub fn set_target_scale(&mut self, target: Vec3) {
         self.target_scale = Some(target);
+    }
+}
+
+impl Default for LerpMovement {
+    fn default() -> Self {
+        Self {
+            target_translation: None,
+            target_rotation: None,
+            target_scale: None,
+            speed: 30.0,
+        }
     }
 }
 

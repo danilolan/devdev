@@ -22,12 +22,16 @@ impl Plugin for SelectionPlugin {
 pub struct ObjectToolData {
     pub entity: Option<Entity>,
     pub grid_size: Option<f32>,
+    pub current_angle: f32,
+    pub angle_step: f32,
 }
 impl Default for ObjectToolData {
     fn default() -> Self {
         ObjectToolData {
             entity: None,
             grid_size: Some(0.2),
+            current_angle: 0.0,
+            angle_step: 90.0,
         }
     }
 }
@@ -37,12 +41,9 @@ impl ObjectToolData {
             commands.entity(entity).despawn_recursive();
         }
 
-        commands.entity(entity).insert(LerpMovement::new(
-            25.0,
-            Vec3::ZERO,
-            Quat::default(),
-            Vec3::ONE,
-        ));
+        commands
+            .entity(entity)
+            .insert(LerpMovement::new(25.0, None, None, None));
 
         self.entity = Some(entity);
     }
@@ -74,7 +75,7 @@ fn handle_object(
 }
 
 fn rotate_object(
-    object_tool_data: ResMut<ObjectToolData>,
+    mut object_tool_data: ResMut<ObjectToolData>,
     mut query: Query<(&mut Transform, &mut LerpMovement)>,
     keyboard_input: Res<Input<KeyCode>>,
 ) {
@@ -88,19 +89,15 @@ fn rotate_object(
         Err(_) => return,
     };
 
-    let current_y_rotation = transform.rotation.to_axis_angle().1;
-
     if keyboard_input.just_pressed(KeyCode::E) {
-        let new_rotation = ((current_y_rotation + 90.0_f32.to_radians()) / (90.0_f32.to_radians()))
-            .round()
-            * 90.0_f32.to_radians();
+        object_tool_data.current_angle += object_tool_data.angle_step;
+        let new_rotation = object_tool_data.current_angle.to_radians();
         lerp_movement.set_target_rotation(Quat::from_rotation_y(new_rotation));
     }
 
     if keyboard_input.just_pressed(KeyCode::Q) {
-        let new_rotation = ((current_y_rotation - 90.0_f32.to_radians()) / (90.0_f32.to_radians()))
-            .round()
-            * 90.0_f32.to_radians();
+        object_tool_data.current_angle -= object_tool_data.angle_step;
+        let new_rotation = object_tool_data.current_angle.to_radians();
         lerp_movement.set_target_rotation(Quat::from_rotation_y(new_rotation));
     }
 }
