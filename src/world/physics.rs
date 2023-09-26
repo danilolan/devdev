@@ -102,44 +102,44 @@ impl BoxCollider {
             if self_entity == other_entity {
                 continue; // Skip the current entity
             }
-            // Adquira os eixos orientados do BoxCollider
+            // Obtain the oriented axes of the BoxCollider
             let axes_a = self.get_axes();
             let axes_b = other.get_axes();
 
-            let mut is_colliding = true; // pressupomos inicialmente que está colidindo
+            let mut is_colliding = true; // initially assume it's colliding
 
-            // Verifique se as projeções ao longo de todos os eixos estão se sobrepondo
+            // Check if the projections along all axes are overlapping
             for axis in axes_a.iter().chain(axes_b.iter()) {
                 if !self.projections_overlap(other, *axis) {
-                    is_colliding = false; // As projeções não se sobrepõem ao longo deste eixo
+                    is_colliding = false; // Projections do not overlap along this axis
                     break;
                 }
             }
 
-            // Se, depois de todos os testes, ainda acreditarmos que está colidindo, então é verdade
+            // If, after all tests, we still believe it's colliding, then it's true
             if is_colliding {
                 return true;
             }
         }
-        return false; // Se chegarmos aqui, não houve colisão com nenhum dos outros BoxColliders
+        return false; // If we get here, there was no collision with any of the other BoxColliders
     }
 
-    // Retorna os três eixos principais do BoxCollider
+    // Returns the three main axes of the BoxCollider
     fn get_axes(&self) -> [Vec3; 3] {
         let mat = Mat3::from_quat(self.rotation);
         [mat.col(0).into(), mat.col(1).into(), mat.col(2).into()]
     }
 
-    // Verifica se as projeções de dois BoxColliders ao longo de um eixo se sobrepõem
+    // Checks if the projections of two BoxColliders along an axis overlap
     fn projections_overlap(&self, other: &BoxCollider, axis: Vec3) -> bool {
         let self_proj = self.project_onto_axis(&axis);
         let other_proj = other.project_onto_axis(&axis);
 
-        // Verifique se as projeções se sobrepõem
+        // Check if projections overlap
         self_proj.0 <= other_proj.1 && self_proj.1 >= other_proj.0
     }
 
-    // Projeta os pontos do BoxCollider em um eixo e retorna o mínimo e o máximo
+    // Projects the points of the BoxCollider onto an axis and returns the min and max
     fn project_onto_axis(&self, axis: &Vec3) -> (f32, f32) {
         let corners = self.get_corners();
         let mut min = f32::INFINITY;
@@ -154,7 +154,7 @@ impl BoxCollider {
         (min, max)
     }
 
-    // Calcula os cantos do BoxCollider
+    // Computes the corners of the BoxCollider
     fn get_corners(&self) -> [Vec3; 8] {
         let half_extents = self.scale * 0.5;
         let rot_matrix = Mat3::from_quat(self.rotation);
@@ -172,7 +172,6 @@ impl BoxCollider {
         corners
     }
 }
-
 fn handle_colliders(mut collider_query: Query<(&mut BoxCollider, &Transform), With<BoxCollider>>) {
     for (mut collider, transform) in collider_query.iter_mut() {
         let translation = transform.translation;
