@@ -1,4 +1,4 @@
-use crate::world::physics::LerpMovement;
+use crate::world::physics::{BoxCollider, LerpMovement};
 
 use super::picking::PickingData;
 use bevy::prelude::*;
@@ -7,13 +7,30 @@ pub struct SelectionPlugin;
 
 impl Plugin for SelectionPlugin {
     fn build(&self, app: &mut App) {
+        //states
+        app.add_state::<CanPlaceState>();
+
         //resources
         app.init_resource::<ObjectToolData>();
 
         //systems
         app.add_systems(Update, handle_object);
-        app.add_systems(Update, place_object);
         app.add_systems(Update, rotate_object);
+        app.add_systems(Update, handle_can_place_state);
+        app.add_systems(Update, place_object.run_if(in_state(CanPlaceState::True)));
+    }
+}
+
+//----states---
+#[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
+enum CanPlaceState {
+    True,
+    False,
+}
+
+impl Default for CanPlaceState {
+    fn default() -> Self {
+        Self::True
     }
 }
 
@@ -105,5 +122,22 @@ fn rotate_object(
 fn place_object(mut object_tool_data: ResMut<ObjectToolData>, buttons: Res<Input<MouseButton>>) {
     if buttons.just_pressed(MouseButton::Left) {
         object_tool_data.entity = None;
+    }
+}
+
+fn handle_can_place_state(
+    query_colliders: Query<(Entity, &BoxCollider)>,
+    object_tool_data: Res<ObjectToolData>,
+    mut can_place_state: ResMut<NextState<CanPlaceState>>,
+) {
+    if let Some(entity) = object_tool_data.entity {
+        if let Ok((_, current_collider)) = query_colliders.get(entity) {
+            let is_colliding = current_collider.is_colliding_with(entity, &query_colliders);
+            if is_colliding {
+                can_place_state.set(CanPlaceState::False)
+            } else {
+                can_place_state.set(CanPlaceState::True)
+            }
+        }
     }
 }

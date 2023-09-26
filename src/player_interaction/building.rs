@@ -24,6 +24,24 @@ impl Plugin for BuildingPlugin {
     }
 }
 
+//----states----
+#[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
+enum BuildingState {
+    Wall,
+    Window,
+    Pillar,
+    Door,
+    None,
+}
+
+impl Default for BuildingState {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
+//----systems----
+
 const WALL_KEY: KeyCode = KeyCode::F1;
 const PILLAR_KEY: KeyCode = KeyCode::F2;
 const WINDOW_KEY: KeyCode = KeyCode::F3;
@@ -66,7 +84,6 @@ fn spawn_asset(
         None => hit_point,
     };
 
-    println!("{:?}", object_tool_data.current_angle);
     let entity = commands
         .spawn(((SceneBundle {
             scene: asset.clone(),
@@ -82,7 +99,7 @@ fn spawn_asset(
 
     if insert_collider {
         commands.entity(entity).insert(BoxCollider {
-            scale: Vec3::new(0.2, 1.5, 1.0),
+            scale: Vec3::new(0.2, 1.5, 0.98),
             translation: Vec3::ZERO,
             rotation: Quat::default(),
         });
@@ -140,20 +157,5 @@ fn handle_door(
 
     if object_tool_data.entity.is_none() {
         spawn_asset(commands, wall, object_tool_data, picking, true)
-    }
-}
-
-#[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
-enum BuildingState {
-    Wall,
-    Window,
-    Pillar,
-    Door,
-    None,
-}
-
-impl Default for BuildingState {
-    fn default() -> Self {
-        Self::None
     }
 }

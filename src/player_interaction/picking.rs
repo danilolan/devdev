@@ -104,5 +104,4 @@ fn handle_picking(
 
 fn test(mut picking: ResMut<PickingData>, collider_query: Query<(Entity, &BoxCollider)>) {
     let entity = picking.clone().get_entity(collider_query);
-    println!("{:?}", entity);
 }
