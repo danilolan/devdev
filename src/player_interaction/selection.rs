@@ -138,6 +138,8 @@ fn handle_can_place_state(
             } else {
                 can_place_state.set(CanPlaceState::True)
             }
+        } else {
+            can_place_state.set(CanPlaceState::True)
         }
     }
 }
