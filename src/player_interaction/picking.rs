@@ -31,7 +31,10 @@ impl Default for PickingData {
 }
 
 impl PickingData {
-    pub fn get_entity(self, collider_query: Query<(Entity, &BoxCollider)>) -> Option<Entity> {
+    pub fn get_entity<T: Component>(
+        self,
+        collider_query: Query<(Entity, &BoxCollider), With<T>>,
+    ) -> Option<Entity> {
         for (entity, collider) in collider_query.iter() {
             if Self::intersects(self.ray, collider) {
                 return Some(entity);
@@ -102,7 +105,7 @@ fn handle_picking(
     picking.ray = ray;
 }
 
-fn test(mut picking: ResMut<PickingData>, collider_query: Query<(Entity, &BoxCollider)>) {
+/* fn test(mut picking: ResMut<PickingData>, collider_query: Query<(Entity, &BoxCollider)>) {
     let entity = picking.clone().get_entity(collider_query);
-    println!("{:?}", entity);
 }
+ */

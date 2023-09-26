@@ -17,7 +17,7 @@ pub struct Grid {
 
 impl Default for Grid {
     fn default() -> Self {
-        Grid { tile_size: 0.5 }
+        Grid { tile_size: 1.0 }
     }
 }
 impl Grid {

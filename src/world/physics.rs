@@ -76,7 +76,103 @@ fn handle_smooth_movement(
     }
 }
 
-//collider
+//----collider
+
+#[derive(Component)]
+pub struct BoxCollider {
+    pub scale: Vec3,
+    pub translation: Vec3,
+    pub rotation: Quat,
+}
+
+impl BoxCollider {
+    pub fn new(translation: Vec3, rotation: Quat, scale: Vec3) -> Self {
+        Self {
+            scale,
+            translation,
+            rotation,
+        }
+    }
+    pub fn is_colliding_with(
+        &self,
+        self_entity: Entity,
+        others: &Query<(Entity, &BoxCollider)>,
+        inset: f32,
+    ) -> bool {
+        for (other_entity, other) in others.iter() {
+            if self_entity == other_entity {
+                continue; // Skip the current entity
+            }
+            // Obtain the oriented axes of the BoxCollider
+            let axes_a = self.get_axes();
+            let axes_b = other.get_axes();
+
+            let mut is_colliding = true; // initially assume it's colliding
+
+            // Check if the projections along all axes are overlapping
+            for axis in axes_a.iter().chain(axes_b.iter()) {
+                if !self.projections_overlap(other, *axis, inset) {
+                    is_colliding = false; // Projections do not overlap along this axis
+                    break;
+                }
+            }
+
+            // If, after all tests, we still believe it's colliding, then it's true
+            if is_colliding {
+                return true;
+            }
+        }
+        return false; // If we get here, there was no collision with any of the other BoxColliders
+    }
+
+    // Returns the three main axes of the BoxCollider
+    fn get_axes(&self) -> [Vec3; 3] {
+        let mat = Mat3::from_quat(self.rotation);
+        [mat.col(0).into(), mat.col(1).into(), mat.col(2).into()]
+    }
+
+    // Checks if the projections of two BoxColliders along an axis overlap
+    fn projections_overlap(&self, other: &BoxCollider, axis: Vec3, inset: f32) -> bool {
+        let self_proj = self.project_onto_axis(&axis);
+        let other_proj = other.project_onto_axis(&axis);
+
+        // Check if the projections overlap beyond the inset
+        self_proj.0 <= (other_proj.1 + inset) && self_proj.1 >= (other_proj.0 - inset)
+    }
+
+    // Projects the points of the BoxCollider onto an axis and returns the min and max
+    fn project_onto_axis(&self, axis: &Vec3) -> (f32, f32) {
+        let corners = self.get_corners();
+        let mut min = f32::INFINITY;
+        let mut max = f32::NEG_INFINITY;
+
+        for corner in &corners {
+            let dot = corner.dot(*axis);
+            min = min.min(dot);
+            max = max.max(dot);
+        }
+
+        (min, max)
+    }
+
+    // Computes the corners of the BoxCollider
+    fn get_corners(&self) -> [Vec3; 8] {
+        let half_extents = self.scale * 0.5;
+        let rot_matrix = Mat3::from_quat(self.rotation);
+
+        let mut corners = [Vec3::ZERO; 8];
+        for i in 0..8 {
+            let sign = Vec3::new(
+                (i & 1) as f32 * 2.0 - 1.0,
+                ((i >> 1) & 1) as f32 * 2.0 - 1.0,
+                ((i >> 2) & 1) as f32 * 2.0 - 1.0,
+            );
+            corners[i] = self.translation + rot_matrix.mul_vec3(half_extents * sign);
+        }
+
+        corners
+    }
+}
 fn handle_colliders(mut collider_query: Query<(&mut BoxCollider, &Transform), With<BoxCollider>>) {
     for (mut collider, transform) in collider_query.iter_mut() {
         let translation = transform.translation;
@@ -90,7 +186,7 @@ fn handle_colliders(mut collider_query: Query<(&mut BoxCollider, &Transform), Wi
         collider.rotation = rotation;
     }
 }
-const SHOW_COLLIDERS: bool = false;
+const SHOW_COLLIDERS: bool = true;
 fn show_colliders(mut gizmos: Gizmos, collider_query: Query<&BoxCollider, With<BoxCollider>>) {
     if !SHOW_COLLIDERS {
         return;
@@ -106,42 +202,92 @@ fn show_colliders(mut gizmos: Gizmos, collider_query: Query<&BoxCollider, With<B
         )
     }
 }
-#[derive(Component)]
-pub struct BoxCollider {
-    pub scale: Vec3,
-    pub translation: Vec3,
-    pub rotation: Quat,
-}
 
 //----lerp movement----
 #[derive(Component)]
 pub struct LerpMovement {
-    pub target_position: Option<Vec3>,
-    pub current_position: Vec3,
+    pub target_translation: Option<Vec3>,
+    pub target_rotation: Option<Quat>,
+    pub target_scale: Option<Vec3>,
     pub speed: f32,
 }
 
 impl LerpMovement {
-    pub fn new(speed: f32, start_translation: Vec3) -> Self {
+    pub fn new(
+        speed: f32,
+        translation: Option<Vec3>,
+        rotation: Option<Quat>,
+        scale: Option<Vec3>,
+    ) -> Self {
         Self {
-            target_position: None,
-            current_position: start_translation,
+            target_translation: translation,
+            target_rotation: rotation,
+            target_scale: scale,
             speed,
         }
     }
-    pub fn set_target(&mut self, target: Vec3) {
-        self.target_position = Some(target);
+    pub fn set_target_translation(&mut self, target: Vec3) {
+        self.target_translation = Some(target);
+    }
+    pub fn set_target_rotation(&mut self, target: Quat) {
+        self.target_rotation = Some(target);
+    }
+    pub fn set_target_scale(&mut self, target: Vec3) {
+        self.target_scale = Some(target);
     }
 }
 
+impl Default for LerpMovement {
+    fn default() -> Self {
+        Self {
+            target_translation: None,
+            target_rotation: None,
+            target_scale: None,
+            speed: 30.0,
+        }
+    }
+}
+
+const TRANSLATION_DIFF: f32 = 0.01;
+const ROTATION_DIFF: f32 = 0.9999;
+const SCALE_DIFF: f32 = 0.01;
+
 fn handle_lerp_movement(time: Res<Time>, mut query: Query<(&mut LerpMovement, &mut Transform)>) {
     for (mut lerp_movement, mut transform) in query.iter_mut() {
-        if let Some(target_position) = lerp_movement.target_position {
+        if let Some(target) = lerp_movement.target_translation {
             let t = lerp_movement.speed * time.delta_seconds();
+            let new_translation = transform.translation.lerp(target, t);
 
-            transform.translation = transform.translation.lerp(target_position, t);
+            if (new_translation - target).length() < TRANSLATION_DIFF {
+                transform.translation = target;
+                lerp_movement.target_translation = None;
+            } else {
+                transform.translation = new_translation;
+            }
+        }
 
-            lerp_movement.target_position = None;
+        if let Some(target) = lerp_movement.target_rotation {
+            let t = lerp_movement.speed * time.delta_seconds();
+            let new_rotation = transform.rotation.lerp(target, t);
+
+            if new_rotation.dot(target).abs() > ROTATION_DIFF {
+                transform.rotation = target;
+                lerp_movement.target_rotation = None;
+            } else {
+                transform.rotation = new_rotation;
+            }
+        }
+
+        if let Some(target) = lerp_movement.target_scale {
+            let t = lerp_movement.speed * time.delta_seconds();
+            let new_scale = transform.scale.lerp(target, t);
+
+            if (new_scale - target).length() < SCALE_DIFF {
+                transform.scale = target;
+                lerp_movement.target_scale = None;
+            } else {
+                transform.scale = new_scale;
+            }
         }
     }
 }

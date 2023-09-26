@@ -1,71 +1,213 @@
 use bevy::prelude::*;
 
-use crate::player_interaction::picking::PickingData;
-use crate::world::grid::Grid;
-use crate::world::walls::WallPoints;
+use crate::world::physics::BoxCollider;
+
+use super::{picking::PickingData, selection::ObjectToolData};
 
 pub struct BuildingPlugin;
 
 impl Plugin for BuildingPlugin {
     fn build(&self, app: &mut App) {
-        //systems
-        app.add_systems(Update, handle_building);
+        app.add_state::<BuildingState>();
 
-        //resources
-        app.init_resource::<MousePoints>();
+        app.add_systems(Update, handle_states);
+        app.add_systems(Update, handle_wall.run_if(in_state(BuildingState::Wall)));
+        app.add_systems(
+            Update,
+            handle_window.run_if(in_state(BuildingState::Window)),
+        );
+        app.add_systems(Update, handle_door.run_if(in_state(BuildingState::Door)));
+        app.add_systems(
+            Update,
+            handle_pillar.run_if(in_state(BuildingState::Pillar)),
+        );
+        app.add_systems(
+            Update,
+            handle_destroy.run_if(in_state(BuildingState::Destroy)),
+        );
     }
 }
 
-//resources
-#[derive(Resource)]
-struct MousePoints {
-    points: [Option<[i32; 2]>; 2],
+//----components----
+#[derive(Component)]
+pub struct Building {}
+
+//----states----
+#[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
+enum BuildingState {
+    Wall,
+    Window,
+    Pillar,
+    Door,
+    Destroy,
+    None,
 }
 
-impl Default for MousePoints {
+impl Default for BuildingState {
     fn default() -> Self {
-        MousePoints {
-            points: [None, None],
-        }
-    }
-}
-
-impl MousePoints {
-    fn reset(&mut self) {
-        for mut _point in self.points {
-            _point = None;
-        }
+        Self::None
     }
 }
 
 //----systems----
-fn handle_building(
-    picking: Res<PickingData>,
-    grid: Res<Grid>,
+
+const WALL_KEY: KeyCode = KeyCode::F1;
+const PILLAR_KEY: KeyCode = KeyCode::F2;
+const WINDOW_KEY: KeyCode = KeyCode::F3;
+const DOOR_KEY: KeyCode = KeyCode::F4;
+const DESTROY_KEY: KeyCode = KeyCode::F5;
+
+fn handle_states(
+    keys: Res<Input<KeyCode>>,
+    mut building_state: ResMut<NextState<BuildingState>>,
+    mut object_tool_data: ResMut<ObjectToolData>,
+    mut commands: Commands,
+) {
+    if keys.just_pressed(WALL_KEY) {
+        object_tool_data.delete_entity(&mut commands);
+        building_state.set(BuildingState::Wall);
+    }
+    if keys.just_released(PILLAR_KEY) {
+        object_tool_data.delete_entity(&mut commands);
+        building_state.set(BuildingState::Pillar);
+    }
+    if keys.pressed(WINDOW_KEY) {
+        object_tool_data.delete_entity(&mut commands);
+        building_state.set(BuildingState::Window);
+    }
+    if keys.pressed(DOOR_KEY) {
+        object_tool_data.delete_entity(&mut commands);
+        building_state.set(BuildingState::Door);
+    }
+    if keys.pressed(DESTROY_KEY) {
+        object_tool_data.delete_entity(&mut commands);
+        building_state.set(BuildingState::Destroy);
+    }
+}
+
+fn spawn_asset(
+    mut commands: Commands,
+    asset: Handle<Scene>,
+    mut object_tool_data: ResMut<ObjectToolData>,
+    mut picking: Res<PickingData>,
+    collider_scale: Vec3,
+) {
+    let hit_point = picking.get_hit_in_ground();
+    let translation: Vec3 = match object_tool_data.grid_size {
+        Some(grid_size) => (hit_point / grid_size).round() * grid_size,
+        None => hit_point,
+    };
+
+    let entity = commands
+        .spawn((
+            (SceneBundle {
+                scene: asset.clone(),
+                transform: Transform {
+                    translation,
+                    rotation: Quat::from_rotation_y(object_tool_data.current_angle.to_radians()),
+                    scale: Vec3::ONE,
+                },
+                ..Default::default()
+            }),
+            Building {},
+        ))
+        .insert(Name::from("building".to_string()))
+        .id();
+
+    commands.entity(entity).insert(BoxCollider {
+        scale: collider_scale,
+        translation: Vec3::ZERO,
+        rotation: Quat::default(),
+    });
+
+    object_tool_data.set_new_entity(entity, &mut commands);
+}
+
+fn handle_destroy(
+    mut commands: Commands,
+    mut picking: Res<PickingData>,
+    collider_query: Query<(Entity, &BoxCollider), With<Building>>,
     buttons: Res<Input<MouseButton>>,
-    mut wall_points: ResMut<WallPoints>,
-    mut mouse_points: ResMut<MousePoints>,
 ) {
     if buttons.just_pressed(MouseButton::Left) {
-        //get first point
-        let hit_point = picking.get_hit_in_ground();
-        mouse_points.points[0] = Some(grid.world_to_coord(hit_point));
-    }
-
-    if buttons.just_released(MouseButton::Left) {
-        //get second point
-        let hit_point = picking.get_hit_in_ground();
-        mouse_points.points[1] = Some(grid.world_to_coord(hit_point));
-
-        //change walls
-        if let (Some(first_point), Some(second_point)) =
-            (mouse_points.points[0], mouse_points.points[1])
-        {
-            wall_points.add_line([first_point, second_point]);
-            wall_points.set_changed();
+        if let Some(entity) = picking.get_entity::<Building>(collider_query) {
+            commands.entity(entity).despawn_recursive();
         }
+    }
+}
 
-        //reset
-        mouse_points.reset();
+fn handle_wall(
+    mut commands: Commands,
+    server: Res<AssetServer>,
+    mut object_tool_data: ResMut<ObjectToolData>,
+    mut picking: Res<PickingData>,
+) {
+    let wall: Handle<Scene> = server.load("./models/wall.gltf#Scene0");
+
+    if object_tool_data.entity.is_none() {
+        spawn_asset(
+            commands,
+            wall,
+            object_tool_data,
+            picking,
+            Vec3::new(0.2, 1.7, 1.0),
+        )
+    }
+}
+
+fn handle_window(
+    mut commands: Commands,
+    server: Res<AssetServer>,
+    mut object_tool_data: ResMut<ObjectToolData>,
+    mut picking: Res<PickingData>,
+) {
+    let window: Handle<Scene> = server.load("./models/window.gltf#Scene0");
+
+    if object_tool_data.entity.is_none() {
+        spawn_asset(
+            commands,
+            window,
+            object_tool_data,
+            picking,
+            Vec3::new(0.2, 1., 1.0),
+        )
+    }
+}
+
+fn handle_pillar(
+    mut commands: Commands,
+    server: Res<AssetServer>,
+    mut object_tool_data: ResMut<ObjectToolData>,
+    mut picking: Res<PickingData>,
+) {
+    let wall: Handle<Scene> = server.load("./models/pillar.gltf#Scene0");
+
+    if object_tool_data.entity.is_none() {
+        spawn_asset(
+            commands,
+            wall,
+            object_tool_data,
+            picking,
+            Vec3::new(0.2, 1.7, 0.2),
+        )
+    }
+}
+
+fn handle_door(
+    mut commands: Commands,
+    server: Res<AssetServer>,
+    mut object_tool_data: ResMut<ObjectToolData>,
+    mut picking: Res<PickingData>,
+) {
+    let wall: Handle<Scene> = server.load("./models/pillar.gltf#Scene0");
+
+    if object_tool_data.entity.is_none() {
+        spawn_asset(
+            commands,
+            wall,
+            object_tool_data,
+            picking,
+            Vec3::new(0.2, 1., 1.0),
+        )
     }
 }
