@@ -1,55 +1,11 @@
 use bevy::prelude::*;
 
-use crate::world::physics::BoxCollider;
+use crate::{
+    player_interaction::{picking::PickingData, selection::ObjectToolData},
+    world::physics::BoxCollider,
+};
 
-use super::{picking::PickingData, selection::ObjectToolData};
-
-pub struct BuildingPlugin;
-
-impl Plugin for BuildingPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_state::<BuildingState>();
-
-        app.add_systems(Update, handle_states);
-        app.add_systems(Update, handle_wall.run_if(in_state(BuildingState::Wall)));
-        app.add_systems(
-            Update,
-            handle_window.run_if(in_state(BuildingState::Window)),
-        );
-        app.add_systems(Update, handle_door.run_if(in_state(BuildingState::Door)));
-        app.add_systems(
-            Update,
-            handle_pillar.run_if(in_state(BuildingState::Pillar)),
-        );
-        app.add_systems(
-            Update,
-            handle_destroy.run_if(in_state(BuildingState::Destroy)),
-        );
-    }
-}
-
-//----components----
-#[derive(Component)]
-pub struct Building {}
-
-//----states----
-#[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
-enum BuildingState {
-    Wall,
-    Window,
-    Pillar,
-    Door,
-    Destroy,
-    None,
-}
-
-impl Default for BuildingState {
-    fn default() -> Self {
-        Self::None
-    }
-}
-
-//----systems----
+use super::{components::Building, states::BuildingState};
 
 const WALL_KEY: KeyCode = KeyCode::F1;
 const PILLAR_KEY: KeyCode = KeyCode::F2;
@@ -57,7 +13,7 @@ const WINDOW_KEY: KeyCode = KeyCode::F3;
 const DOOR_KEY: KeyCode = KeyCode::F4;
 const DESTROY_KEY: KeyCode = KeyCode::F5;
 
-fn handle_states(
+pub fn handle_states(
     keys: Res<Input<KeyCode>>,
     mut building_state: ResMut<NextState<BuildingState>>,
     mut object_tool_data: ResMut<ObjectToolData>,
@@ -85,7 +41,7 @@ fn handle_states(
     }
 }
 
-fn spawn_asset(
+pub fn spawn_asset(
     mut commands: Commands,
     asset: Handle<Scene>,
     mut object_tool_data: ResMut<ObjectToolData>,
@@ -123,7 +79,7 @@ fn spawn_asset(
     object_tool_data.set_new_entity(entity, &mut commands);
 }
 
-fn handle_destroy(
+pub fn handle_destroy(
     mut commands: Commands,
     mut picking: Res<PickingData>,
     collider_query: Query<(Entity, &BoxCollider), With<Building>>,
@@ -136,7 +92,7 @@ fn handle_destroy(
     }
 }
 
-fn handle_wall(
+pub fn handle_wall(
     mut commands: Commands,
     server: Res<AssetServer>,
     mut object_tool_data: ResMut<ObjectToolData>,
@@ -155,7 +111,7 @@ fn handle_wall(
     }
 }
 
-fn handle_window(
+pub fn handle_window(
     mut commands: Commands,
     server: Res<AssetServer>,
     mut object_tool_data: ResMut<ObjectToolData>,
@@ -174,7 +130,7 @@ fn handle_window(
     }
 }
 
-fn handle_pillar(
+pub fn handle_pillar(
     mut commands: Commands,
     server: Res<AssetServer>,
     mut object_tool_data: ResMut<ObjectToolData>,
@@ -193,7 +149,7 @@ fn handle_pillar(
     }
 }
 
-fn handle_door(
+pub fn handle_door(
     mut commands: Commands,
     server: Res<AssetServer>,
     mut object_tool_data: ResMut<ObjectToolData>,
