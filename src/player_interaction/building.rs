@@ -53,21 +53,22 @@ fn handle_states(
     mut object_tool_data: ResMut<ObjectToolData>,
     mut commands: Commands,
 ) {
+    println!("{:?}", object_tool_data.entity);
     if keys.just_pressed(WALL_KEY) {
+        object_tool_data.delete_entity(&mut commands);
         building_state.set(BuildingState::Wall);
-        object_tool_data.delete_entity(&mut commands)
     }
     if keys.just_released(PILLAR_KEY) {
+        object_tool_data.delete_entity(&mut commands);
         building_state.set(BuildingState::Pillar);
-        object_tool_data.delete_entity(&mut commands)
     }
     if keys.pressed(WINDOW_KEY) {
+        object_tool_data.delete_entity(&mut commands);
         building_state.set(BuildingState::Window);
-        object_tool_data.delete_entity(&mut commands)
     }
     if keys.pressed(DOOR_KEY) {
+        object_tool_data.delete_entity(&mut commands);
         building_state.set(BuildingState::Door);
-        object_tool_data.delete_entity(&mut commands)
     }
 }
 
@@ -99,7 +100,7 @@ fn spawn_asset(
 
     if insert_collider {
         commands.entity(entity).insert(BoxCollider {
-            scale: Vec3::new(0.2, 1.5, 0.98),
+            scale: Vec3::new(0.18, 1.5, 0.98),
             translation: Vec3::ZERO,
             rotation: Quat::default(),
         });

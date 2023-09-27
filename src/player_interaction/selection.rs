@@ -67,6 +67,7 @@ impl ObjectToolData {
 
     pub fn delete_entity(&mut self, commands: &mut Commands) {
         if let Some(entity) = self.entity {
+            println!("DELETE - {:?}", entity);
             commands.entity(entity).despawn_recursive();
             self.entity = None;
         }
