@@ -21,8 +21,16 @@ impl Plugin for BuildingPlugin {
             Update,
             handle_pillar.run_if(in_state(BuildingState::Pillar)),
         );
+        app.add_systems(
+            Update,
+            handle_destroy.run_if(in_state(BuildingState::Destroy)),
+        );
     }
 }
+
+//----components----
+#[derive(Component)]
+pub struct Building {}
 
 //----states----
 #[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
@@ -31,6 +39,7 @@ enum BuildingState {
     Window,
     Pillar,
     Door,
+    Destroy,
     None,
 }
 
@@ -46,6 +55,7 @@ const WALL_KEY: KeyCode = KeyCode::F1;
 const PILLAR_KEY: KeyCode = KeyCode::F2;
 const WINDOW_KEY: KeyCode = KeyCode::F3;
 const DOOR_KEY: KeyCode = KeyCode::F4;
+const DESTROY_KEY: KeyCode = KeyCode::F5;
 
 fn handle_states(
     keys: Res<Input<KeyCode>>,
@@ -53,7 +63,6 @@ fn handle_states(
     mut object_tool_data: ResMut<ObjectToolData>,
     mut commands: Commands,
 ) {
-    println!("{:?}", object_tool_data.entity);
     if keys.just_pressed(WALL_KEY) {
         object_tool_data.delete_entity(&mut commands);
         building_state.set(BuildingState::Wall);
@@ -70,6 +79,10 @@ fn handle_states(
         object_tool_data.delete_entity(&mut commands);
         building_state.set(BuildingState::Door);
     }
+    if keys.pressed(DESTROY_KEY) {
+        object_tool_data.delete_entity(&mut commands);
+        building_state.set(BuildingState::Destroy);
+    }
 }
 
 fn spawn_asset(
@@ -77,7 +90,7 @@ fn spawn_asset(
     asset: Handle<Scene>,
     mut object_tool_data: ResMut<ObjectToolData>,
     mut picking: Res<PickingData>,
-    insert_collider: bool,
+    collider_scale: Vec3,
 ) {
     let hit_point = picking.get_hit_in_ground();
     let translation: Vec3 = match object_tool_data.grid_size {
@@ -86,27 +99,41 @@ fn spawn_asset(
     };
 
     let entity = commands
-        .spawn(((SceneBundle {
-            scene: asset.clone(),
-            transform: Transform {
-                translation,
-                rotation: Quat::from_rotation_y(object_tool_data.current_angle.to_radians()),
-                scale: Vec3::ONE,
-            },
-            ..Default::default()
-        }),))
+        .spawn((
+            (SceneBundle {
+                scene: asset.clone(),
+                transform: Transform {
+                    translation,
+                    rotation: Quat::from_rotation_y(object_tool_data.current_angle.to_radians()),
+                    scale: Vec3::ONE,
+                },
+                ..Default::default()
+            }),
+            Building {},
+        ))
         .insert(Name::from("building".to_string()))
         .id();
 
-    if insert_collider {
-        commands.entity(entity).insert(BoxCollider {
-            scale: Vec3::new(0.18, 1.5, 0.98),
-            translation: Vec3::ZERO,
-            rotation: Quat::default(),
-        });
-    }
+    commands.entity(entity).insert(BoxCollider {
+        scale: collider_scale,
+        translation: Vec3::ZERO,
+        rotation: Quat::default(),
+    });
 
     object_tool_data.set_new_entity(entity, &mut commands);
+}
+
+fn handle_destroy(
+    mut commands: Commands,
+    mut picking: Res<PickingData>,
+    collider_query: Query<(Entity, &BoxCollider), With<Building>>,
+    buttons: Res<Input<MouseButton>>,
+) {
+    if buttons.just_pressed(MouseButton::Left) {
+        if let Some(entity) = picking.get_entity::<Building>(collider_query) {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
 }
 
 fn handle_wall(
@@ -118,7 +145,13 @@ fn handle_wall(
     let wall: Handle<Scene> = server.load("./models/wall.gltf#Scene0");
 
     if object_tool_data.entity.is_none() {
-        spawn_asset(commands, wall, object_tool_data, picking, true)
+        spawn_asset(
+            commands,
+            wall,
+            object_tool_data,
+            picking,
+            Vec3::new(0.2, 1.7, 1.0),
+        )
     }
 }
 
@@ -131,7 +164,13 @@ fn handle_window(
     let window: Handle<Scene> = server.load("./models/window.gltf#Scene0");
 
     if object_tool_data.entity.is_none() {
-        spawn_asset(commands, window, object_tool_data, picking, true)
+        spawn_asset(
+            commands,
+            window,
+            object_tool_data,
+            picking,
+            Vec3::new(0.2, 1., 1.0),
+        )
     }
 }
 
@@ -144,7 +183,13 @@ fn handle_pillar(
     let wall: Handle<Scene> = server.load("./models/pillar.gltf#Scene0");
 
     if object_tool_data.entity.is_none() {
-        spawn_asset(commands, wall, object_tool_data, picking, false)
+        spawn_asset(
+            commands,
+            wall,
+            object_tool_data,
+            picking,
+            Vec3::new(0.2, 1.7, 0.2),
+        )
     }
 }
 
@@ -157,6 +202,12 @@ fn handle_door(
     let wall: Handle<Scene> = server.load("./models/pillar.gltf#Scene0");
 
     if object_tool_data.entity.is_none() {
-        spawn_asset(commands, wall, object_tool_data, picking, true)
+        spawn_asset(
+            commands,
+            wall,
+            object_tool_data,
+            picking,
+            Vec3::new(0.2, 1., 1.0),
+        )
     }
 }

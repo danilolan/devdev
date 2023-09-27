@@ -67,7 +67,6 @@ impl ObjectToolData {
 
     pub fn delete_entity(&mut self, commands: &mut Commands) {
         if let Some(entity) = self.entity {
-            println!("DELETE - {:?}", entity);
             commands.entity(entity).despawn_recursive();
             self.entity = None;
         }
@@ -133,7 +132,7 @@ fn handle_can_place_state(
 ) {
     if let Some(entity) = object_tool_data.entity {
         if let Ok((_, current_collider)) = query_colliders.get(entity) {
-            let is_colliding = current_collider.is_colliding_with(entity, &query_colliders);
+            let is_colliding = current_collider.is_colliding_with(entity, &query_colliders, -0.1);
             if is_colliding {
                 can_place_state.set(CanPlaceState::False)
             } else {

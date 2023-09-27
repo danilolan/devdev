@@ -97,6 +97,7 @@ impl BoxCollider {
         &self,
         self_entity: Entity,
         others: &Query<(Entity, &BoxCollider)>,
+        inset: f32,
     ) -> bool {
         for (other_entity, other) in others.iter() {
             if self_entity == other_entity {
@@ -110,7 +111,7 @@ impl BoxCollider {
 
             // Check if the projections along all axes are overlapping
             for axis in axes_a.iter().chain(axes_b.iter()) {
-                if !self.projections_overlap(other, *axis) {
+                if !self.projections_overlap(other, *axis, inset) {
                     is_colliding = false; // Projections do not overlap along this axis
                     break;
                 }
@@ -131,12 +132,12 @@ impl BoxCollider {
     }
 
     // Checks if the projections of two BoxColliders along an axis overlap
-    fn projections_overlap(&self, other: &BoxCollider, axis: Vec3) -> bool {
+    fn projections_overlap(&self, other: &BoxCollider, axis: Vec3, inset: f32) -> bool {
         let self_proj = self.project_onto_axis(&axis);
         let other_proj = other.project_onto_axis(&axis);
 
-        // Check if projections overlap
-        self_proj.0 <= other_proj.1 && self_proj.1 >= other_proj.0
+        // Check if the projections overlap beyond the inset
+        self_proj.0 <= (other_proj.1 + inset) && self_proj.1 >= (other_proj.0 - inset)
     }
 
     // Projects the points of the BoxCollider onto an axis and returns the min and max
