@@ -2,7 +2,10 @@ use bevy::prelude::*;
 
 use crate::{
     player_interaction::picking::resources::PickingData,
-    world::physics::components::{BoxCollider, LerpMovement},
+    world::{
+        grid::{self, resources::Grid},
+        physics::components::{BoxCollider, LerpMovement},
+    },
 };
 
 use super::{resources::ObjectToolData, states::CanPlaceState};
@@ -56,9 +59,16 @@ pub fn rotate_object(
 pub fn place_object(
     mut object_tool_data: ResMut<ObjectToolData>,
     buttons: Res<Input<MouseButton>>,
+    mut grid: ResMut<Grid>,
+    query_entity: Query<&BoxCollider>,
 ) {
     if buttons.just_pressed(MouseButton::Left) {
-        object_tool_data.entity = None;
+        if let Some(entity) = object_tool_data.entity {
+            object_tool_data.entity = None;
+            if let Ok(collider) = query_entity.get(entity) {
+                grid.mark_tiles_from_collider(collider);
+            }
+        }
     }
 }
 

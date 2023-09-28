@@ -17,5 +17,6 @@ pub struct GridPlugin;
 impl Plugin for GridPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Grid>();
+        app.add_systems(Update, show_grid);
     }
 }
