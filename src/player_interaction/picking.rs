@@ -1,7 +1,7 @@
 use bevy::math::EulerRot;
 use bevy::{prelude::*, window::PrimaryWindow};
 
-use crate::{player_interaction::camera::CameraDefault, world::physics::BoxCollider};
+use crate::{player_interaction::camera::components::CameraDefault, world::physics::BoxCollider};
 
 pub struct PickingPlugin;
 
