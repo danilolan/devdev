@@ -1,22 +1,8 @@
-//file used to declare components, systems... to use in world physics
+use bevy::prelude::*;
 
-use bevy::{gizmos, prelude::*, transform};
-
-pub struct PhysicsPlugin;
-
-impl Plugin for PhysicsPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, show_colliders);
-        app.add_systems(Update, handle_colliders);
-        app.add_systems(Update, handle_smooth_movement);
-        app.add_systems(Update, handle_lerp_movement);
-    }
-}
-
-//smooth movement
 #[derive(Component)]
 pub struct SmoothMovement {
-    translation: Vec3,
+    pub translation: Vec3,
     velocity: Vec3,
     pub acceleration: f32,
     pub desacceleration: f32,
@@ -68,16 +54,6 @@ impl SmoothMovement {
     }
 }
 
-fn handle_smooth_movement(
-    mut query: Query<(&mut Transform, &SmoothMovement), With<SmoothMovement>>,
-) {
-    for (mut transform, movement) in query.iter_mut() {
-        transform.translation = movement.translation;
-    }
-}
-
-//----collider
-
 #[derive(Component)]
 pub struct BoxCollider {
     pub scale: Vec3,
@@ -125,13 +101,13 @@ impl BoxCollider {
         return false; // If we get here, there was no collision with any of the other BoxColliders
     }
 
-    // Returns the three main axes of the BoxCollider
+    /// Returns the three main axes of the BoxCollider
     fn get_axes(&self) -> [Vec3; 3] {
         let mat = Mat3::from_quat(self.rotation);
         [mat.col(0).into(), mat.col(1).into(), mat.col(2).into()]
     }
 
-    // Checks if the projections of two BoxColliders along an axis overlap
+    /// Checks if the projections of two BoxColliders along an axis overlap
     fn projections_overlap(&self, other: &BoxCollider, axis: Vec3, inset: f32) -> bool {
         let self_proj = self.project_onto_axis(&axis);
         let other_proj = other.project_onto_axis(&axis);
@@ -140,7 +116,7 @@ impl BoxCollider {
         self_proj.0 <= (other_proj.1 + inset) && self_proj.1 >= (other_proj.0 - inset)
     }
 
-    // Projects the points of the BoxCollider onto an axis and returns the min and max
+    /// Projects the points of the BoxCollider onto an axis and returns the min and max
     fn project_onto_axis(&self, axis: &Vec3) -> (f32, f32) {
         let corners = self.get_corners();
         let mut min = f32::INFINITY;
@@ -155,7 +131,7 @@ impl BoxCollider {
         (min, max)
     }
 
-    // Computes the corners of the BoxCollider
+    /// Computes the corners of the BoxCollider
     fn get_corners(&self) -> [Vec3; 8] {
         let half_extents = self.scale * 0.5;
         let rot_matrix = Mat3::from_quat(self.rotation);
@@ -173,37 +149,7 @@ impl BoxCollider {
         corners
     }
 }
-fn handle_colliders(mut collider_query: Query<(&mut BoxCollider, &Transform), With<BoxCollider>>) {
-    for (mut collider, transform) in collider_query.iter_mut() {
-        let translation = transform.translation;
-        let rotation = transform.rotation;
 
-        collider.translation = Vec3::new(
-            translation.x,
-            translation.y + (collider.scale.y / 2.0),
-            translation.z,
-        );
-        collider.rotation = rotation;
-    }
-}
-const SHOW_COLLIDERS: bool = true;
-fn show_colliders(mut gizmos: Gizmos, collider_query: Query<&BoxCollider, With<BoxCollider>>) {
-    if !SHOW_COLLIDERS {
-        return;
-    }
-    for collider in collider_query.iter() {
-        gizmos.cuboid(
-            Transform {
-                translation: collider.translation,
-                rotation: collider.rotation,
-                scale: collider.scale,
-            },
-            Color::GREEN,
-        )
-    }
-}
-
-//----lerp movement----
 #[derive(Component)]
 pub struct LerpMovement {
     pub target_translation: Option<Vec3>,
@@ -244,50 +190,6 @@ impl Default for LerpMovement {
             target_rotation: None,
             target_scale: None,
             speed: 30.0,
-        }
-    }
-}
-
-const TRANSLATION_DIFF: f32 = 0.01;
-const ROTATION_DIFF: f32 = 0.9999;
-const SCALE_DIFF: f32 = 0.01;
-
-fn handle_lerp_movement(time: Res<Time>, mut query: Query<(&mut LerpMovement, &mut Transform)>) {
-    for (mut lerp_movement, mut transform) in query.iter_mut() {
-        if let Some(target) = lerp_movement.target_translation {
-            let t = lerp_movement.speed * time.delta_seconds();
-            let new_translation = transform.translation.lerp(target, t);
-
-            if (new_translation - target).length() < TRANSLATION_DIFF {
-                transform.translation = target;
-                lerp_movement.target_translation = None;
-            } else {
-                transform.translation = new_translation;
-            }
-        }
-
-        if let Some(target) = lerp_movement.target_rotation {
-            let t = lerp_movement.speed * time.delta_seconds();
-            let new_rotation = transform.rotation.lerp(target, t);
-
-            if new_rotation.dot(target).abs() > ROTATION_DIFF {
-                transform.rotation = target;
-                lerp_movement.target_rotation = None;
-            } else {
-                transform.rotation = new_rotation;
-            }
-        }
-
-        if let Some(target) = lerp_movement.target_scale {
-            let t = lerp_movement.speed * time.delta_seconds();
-            let new_scale = transform.scale.lerp(target, t);
-
-            if (new_scale - target).length() < SCALE_DIFF {
-                transform.scale = target;
-                lerp_movement.target_scale = None;
-            } else {
-                transform.scale = new_scale;
-            }
         }
     }
 }

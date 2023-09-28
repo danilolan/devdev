@@ -9,7 +9,7 @@ use selection::SelectionPlugin;
 pub mod building;
 use building::BuildingPlugin;
 
-use crate::world::physics::SmoothMovement;
+use crate::world::physics::components::SmoothMovement;
 
 pub struct PlayerInteractionPlugin;
 

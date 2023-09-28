@@ -1,40 +1,20 @@
-use bevy::prelude::*;
+use std::f32::consts::PI;
+
 use bevy::{
     input::mouse::{MouseMotion, MouseWheel},
+    prelude::*,
     window::PrimaryWindow,
 };
 
-use super::Player;
-use std::f32::consts::PI;
+use crate::player_interaction::Player;
 
-pub struct CameraPlugin;
-
-impl Plugin for CameraPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_camera);
-        app.add_systems(Update, orbit_mouse);
-        app.add_systems(Update, zoom_mouse);
-    }
-}
+use super::components::CameraDefault;
 
 const ZOOM_SPEED: f32 = 8.0;
 const ZOOM_BOUNDS: (f32, f32) = (5.0, 70.0);
 const ZOOM_SENSITIVITY: f32 = 30.0;
 const MOUSE_SENSITIVITY: f32 = 50.0;
 
-//Components
-#[derive(Component)]
-pub struct CameraDefault {
-    pub focus: Vec3,
-    pub radius: f32,
-    pub target_radius: f32,
-    pub mouse_sensitivity: f32,
-    pub zoom_sensitivity: f32,
-    pub zoom_bounds: (f32, f32),
-    pub button: MouseButton,
-}
-
-//Systems
 pub fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Camera3dBundle {
@@ -54,6 +34,7 @@ pub fn spawn_camera(mut commands: Commands) {
     ));
 }
 
+/// Handle the camera movement around the player entity
 pub fn orbit_mouse(
     window_q: Query<&Window, With<PrimaryWindow>>,
     mut cam_q: Query<(&mut CameraDefault, &mut Transform), With<CameraDefault>>,
@@ -109,6 +90,7 @@ pub fn orbit_mouse(
     );
 }
 
+// Handle the zoom of the camera
 pub fn zoom_mouse(mut scroll_evr: EventReader<MouseWheel>, mut cam_q: Query<&mut CameraDefault>) {
     let mut scroll = 0.0;
     for ev in scroll_evr.iter() {
@@ -123,6 +105,7 @@ pub fn zoom_mouse(mut scroll_evr: EventReader<MouseWheel>, mut cam_q: Query<&mut
     }
 }
 
+// Lerp any value from A to B using the T time value
 fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
 }
