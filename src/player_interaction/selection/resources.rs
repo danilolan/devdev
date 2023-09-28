@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::world::physics::LerpMovement;
+use crate::world::physics::components::LerpMovement;
 
 /// Holds the current object data to will be placed.
 #[derive(Resource)]

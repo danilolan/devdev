@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     player_interaction::picking::resources::PickingData,
-    world::physics::{BoxCollider, LerpMovement},
+    world::physics::components::{BoxCollider, LerpMovement},
 };
 
 use super::{resources::ObjectToolData, states::CanPlaceState};

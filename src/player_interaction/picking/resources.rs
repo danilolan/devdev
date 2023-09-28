@@ -2,7 +2,7 @@
 
 use bevy::prelude::*;
 
-use crate::world::physics::BoxCollider;
+use crate::world::physics::components::BoxCollider;
 
 #[derive(Resource, Clone, Copy)]
 pub struct PickingData {
