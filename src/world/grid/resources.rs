@@ -1,15 +1,5 @@
 use bevy::prelude::*;
 
-pub struct GridPlugin;
-
-impl Plugin for GridPlugin {
-    fn build(&self, app: &mut App) {
-        //resources
-        app.init_resource::<Grid>();
-    }
-}
-
-//----resources----
 #[derive(Resource, Clone, Copy)]
 pub struct Grid {
     pub tile_size: f32,
