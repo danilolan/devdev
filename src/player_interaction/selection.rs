@@ -1,6 +1,6 @@
 use crate::world::physics::{BoxCollider, LerpMovement};
 
-use super::picking::PickingData;
+use super::picking::resources::PickingData;
 use bevy::prelude::*;
 
 pub struct SelectionPlugin;

@@ -1,25 +1,12 @@
-use bevy::math::EulerRot;
-use bevy::{prelude::*, window::PrimaryWindow};
+//! Handles the actual ray and your interactions
 
-use crate::{player_interaction::camera::components::CameraDefault, world::physics::BoxCollider};
+use bevy::prelude::*;
 
-pub struct PickingPlugin;
+use crate::world::physics::BoxCollider;
 
-impl Plugin for PickingPlugin {
-    fn build(&self, app: &mut App) {
-        //resources
-        app.init_resource::<PickingData>();
-
-        //systems
-        app.add_systems(Update, handle_picking);
-        //app.add_systems(Update, test);
-    }
-}
-
-//----resource----
 #[derive(Resource, Clone, Copy)]
 pub struct PickingData {
-    ray: Ray,
+    pub ray: Ray,
 }
 
 impl Default for PickingData {
@@ -31,6 +18,7 @@ impl Default for PickingData {
 }
 
 impl PickingData {
+    /// Return an entity hitted by the ray
     pub fn get_entity<T: Component>(
         self,
         collider_query: Query<(Entity, &BoxCollider), With<T>>,
@@ -43,6 +31,7 @@ impl PickingData {
         None
     }
 
+    /// Return the translation in the ground ( plane xz ) hitted by the ray
     pub fn get_hit_in_ground(self) -> Vec3 {
         let t = -self.ray.origin.y / self.ray.direction.y;
         let hit_position_ground = self.ray.origin + t * self.ray.direction;
@@ -50,6 +39,7 @@ impl PickingData {
         return hit_position_ground;
     }
 
+    /// Check if ray intersects a box
     fn intersects(ray: Ray, collider: &BoxCollider) -> bool {
         let transform = Transform {
             translation: collider.translation,
@@ -78,34 +68,6 @@ impl PickingData {
             return false;
         }
 
-        // A interseção é válida se tmin está dentro do intervalo [0, tmax]
         tmin >= 0.0 && tmin <= tmax
     }
 }
-
-//----systems----
-fn handle_picking(
-    mut picking: ResMut<PickingData>,
-    q_windows: Query<&Window, With<PrimaryWindow>>,
-    cam_q: Query<(&Camera, &GlobalTransform), With<CameraDefault>>,
-) {
-    let position = match q_windows.single().cursor_position() {
-        Some(pos) => pos,
-        None => return,
-    };
-    let (camera, camera_transform) = match cam_q.get_single() {
-        Ok((cam, transform)) => (cam, transform),
-        Err(_) => return,
-    };
-    let ray = match camera.viewport_to_world(&camera_transform, position) {
-        Some(r) => r,
-        None => return,
-    };
-
-    picking.ray = ray;
-}
-
-/* fn test(mut picking: ResMut<PickingData>, collider_query: Query<(Entity, &BoxCollider)>) {
-    let entity = picking.clone().get_entity(collider_query);
-}
- */
