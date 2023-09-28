@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    player_interaction::{picking::resources::PickingData, selection::ObjectToolData},
+    player_interaction::{picking::resources::PickingData, selection::resources::ObjectToolData},
     world::physics::BoxCollider,
 };
 

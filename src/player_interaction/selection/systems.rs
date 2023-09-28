@@ -1,79 +1,13 @@
-use crate::world::physics::{BoxCollider, LerpMovement};
-
-use super::picking::resources::PickingData;
 use bevy::prelude::*;
 
-pub struct SelectionPlugin;
+use crate::{
+    player_interaction::picking::resources::PickingData,
+    world::physics::{BoxCollider, LerpMovement},
+};
 
-impl Plugin for SelectionPlugin {
-    fn build(&self, app: &mut App) {
-        //states
-        app.add_state::<CanPlaceState>();
+use super::{resources::ObjectToolData, states::CanPlaceState};
 
-        //resources
-        app.init_resource::<ObjectToolData>();
-
-        //systems
-        app.add_systems(Update, handle_object);
-        app.add_systems(Update, rotate_object);
-        app.add_systems(Update, handle_can_place_state);
-        app.add_systems(Update, place_object.run_if(in_state(CanPlaceState::True)));
-    }
-}
-
-//----states---
-#[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
-enum CanPlaceState {
-    True,
-    False,
-}
-
-impl Default for CanPlaceState {
-    fn default() -> Self {
-        Self::True
-    }
-}
-
-//----resources----
-#[derive(Resource)]
-pub struct ObjectToolData {
-    pub entity: Option<Entity>,
-    pub grid_size: Option<f32>,
-    pub current_angle: f32,
-    pub angle_step: f32,
-}
-impl Default for ObjectToolData {
-    fn default() -> Self {
-        ObjectToolData {
-            entity: None,
-            grid_size: Some(0.2),
-            current_angle: 0.0,
-            angle_step: 90.0,
-        }
-    }
-}
-impl ObjectToolData {
-    pub fn set_new_entity(&mut self, entity: Entity, commands: &mut Commands) {
-        if let Some(entity) = self.entity {
-            commands.entity(entity).despawn_recursive();
-        }
-
-        commands
-            .entity(entity)
-            .insert(LerpMovement::new(25.0, None, None, None));
-
-        self.entity = Some(entity);
-    }
-
-    pub fn delete_entity(&mut self, commands: &mut Commands) {
-        if let Some(entity) = self.entity {
-            commands.entity(entity).despawn_recursive();
-            self.entity = None;
-        }
-    }
-}
-//----systems----
-fn handle_object(
+pub fn handle_object(
     picking: Res<PickingData>,
     object_tool_data: ResMut<ObjectToolData>,
     mut global_query: Query<(&mut LerpMovement,)>,
@@ -91,7 +25,7 @@ fn handle_object(
     }
 }
 
-fn rotate_object(
+pub fn rotate_object(
     mut object_tool_data: ResMut<ObjectToolData>,
     mut query: Query<(&mut Transform, &mut LerpMovement)>,
     keyboard_input: Res<Input<KeyCode>>,
@@ -119,13 +53,16 @@ fn rotate_object(
     }
 }
 
-fn place_object(mut object_tool_data: ResMut<ObjectToolData>, buttons: Res<Input<MouseButton>>) {
+pub fn place_object(
+    mut object_tool_data: ResMut<ObjectToolData>,
+    buttons: Res<Input<MouseButton>>,
+) {
     if buttons.just_pressed(MouseButton::Left) {
         object_tool_data.entity = None;
     }
 }
 
-fn handle_can_place_state(
+pub fn handle_can_place_state(
     query_colliders: Query<(Entity, &BoxCollider)>,
     object_tool_data: Res<ObjectToolData>,
     mut can_place_state: ResMut<NextState<CanPlaceState>>,
