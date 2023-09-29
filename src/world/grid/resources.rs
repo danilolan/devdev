@@ -40,11 +40,23 @@ impl Grid {
         tile
     }
 
+    /// Mark the tiles in hashmap that a collider is obstructuring
     pub fn mark_tiles_from_collider(&mut self, collider: &BoxCollider) {
-        // Pega os cantos da caixa do colisor
+        for tile in self.tiles_covered_by_collider(collider) {
+            self.hashmap.insert(tile, true);
+        }
+    }
+
+    /// Unmark the tiles in hashmap that a collider was obstructuring
+    pub fn unmark_tiles_from_collider(&mut self, collider: &BoxCollider) {
+        for tile in self.tiles_covered_by_collider(collider) {
+            self.hashmap.remove(&tile);
+        }
+    }
+
+    fn tiles_covered_by_collider(&self, collider: &BoxCollider) -> Vec<(i32, i32)> {
         let corners = collider.get_corners();
 
-        // Determine os índices de grid mínimos e máximos que a caixa pode ocupar
         let min_index = self.world_to_coord(
             corners
                 .iter()
@@ -58,21 +70,21 @@ impl Grid {
                 }),
         );
 
-        // Itere sobre o range dos índices e verifique se o tile está dentro da caixa
+        let mut covered_tiles = Vec::new();
+
         for x in min_index[0]..=max_index[0] {
             for z in min_index[1]..=max_index[1] {
-                // Converta o índice do grid para a posição do mundo
                 let tile_center = self.coord_to_tile([x, z]);
-
-                // Criamos um colisor fictício para o tile e verificamos se ele está colidindo com o colisor original.
                 let tile_collider =
                     BoxCollider::new(tile_center, Quat::IDENTITY, Vec3::splat(self.tile_size));
 
                 if collider.is_colliding_with_tile(&tile_collider) {
-                    self.hashmap.insert((x, z), true);
+                    covered_tiles.push((x, z));
                 }
             }
         }
+
+        covered_tiles
     }
 
     pub fn get_tile_status(&self, x: i32, z: i32) -> Option<bool> {
