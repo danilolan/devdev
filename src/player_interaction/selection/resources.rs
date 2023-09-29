@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::world::physics::components::LerpMovement;
+use crate::world::{
+    grid::resources::Grid,
+    physics::components::{BoxCollider, LerpMovement},
+};
 
 /// Holds the current object data to will be placed.
 #[derive(Resource)]
@@ -21,7 +24,7 @@ impl Default for ObjectToolData {
     }
 }
 impl ObjectToolData {
-    pub fn set_new_entity(&mut self, entity: Entity, commands: &mut Commands) {
+    pub fn set_new_entity_in_tool(&mut self, entity: Entity, commands: &mut Commands) {
         if let Some(entity) = self.entity {
             commands.entity(entity).despawn_recursive();
         }
@@ -33,10 +36,38 @@ impl ObjectToolData {
         self.entity = Some(entity);
     }
 
-    pub fn delete_entity(&mut self, commands: &mut Commands) {
+    pub fn delete_entity_in_tool(&mut self, commands: &mut Commands) {
         if let Some(entity) = self.entity {
             commands.entity(entity).despawn_recursive();
             self.entity = None;
+        }
+    }
+
+    pub fn place_entity_in_world(
+        &mut self,
+        mut grid: ResMut<Grid>,
+        query_entity: Query<&BoxCollider>,
+    ) {
+        if let Some(entity) = self.entity {
+            self.entity = None;
+            if let Ok(collider) = query_entity.get(entity) {
+                grid.mark_tiles_from_collider(collider);
+            }
+        }
+    }
+
+    pub fn remove_entity_in_world(
+        &mut self,
+        mut grid: ResMut<Grid>,
+        query_entity: Query<&BoxCollider>,
+        commands: &mut Commands,
+    ) {
+        if let Some(entity) = self.entity {
+            self.entity = None;
+            commands.entity(entity).despawn_recursive();
+            if let Ok(collider) = query_entity.get(entity) {
+                grid.unmark_tiles_from_collider(collider);
+            }
         }
     }
 }

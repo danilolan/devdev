@@ -63,12 +63,7 @@ pub fn place_object(
     query_entity: Query<&BoxCollider>,
 ) {
     if buttons.just_pressed(MouseButton::Left) {
-        if let Some(entity) = object_tool_data.entity {
-            object_tool_data.entity = None;
-            if let Ok(collider) = query_entity.get(entity) {
-                grid.mark_tiles_from_collider(collider);
-            }
-        }
+        object_tool_data.place_entity_in_world(grid, query_entity);
     }
 }
 
