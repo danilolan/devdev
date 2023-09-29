@@ -59,11 +59,9 @@ pub fn rotate_object(
 pub fn place_object(
     mut object_tool_data: ResMut<ObjectToolData>,
     buttons: Res<Input<MouseButton>>,
-    mut grid: ResMut<Grid>,
-    query_entity: Query<&BoxCollider>,
 ) {
     if buttons.just_pressed(MouseButton::Left) {
-        object_tool_data.place_entity_in_world(grid, query_entity);
+        object_tool_data.place_entity_in_world();
     }
 }
 
@@ -84,4 +82,43 @@ pub fn handle_can_place_state(
             can_place_state.set(CanPlaceState::True)
         }
     }
+}
+pub fn handle_entities(
+    mut object_tool_data: ResMut<ObjectToolData>,
+    mut grid: ResMut<Grid>,
+    query_entity: Query<(&BoxCollider, &LerpMovement), With<BoxCollider>>,
+    mut commands: Commands,
+) {
+    // Mark tiles for entities that are to be placed
+    for &entity in &object_tool_data.entities_to_place {
+        if let Ok((collider, lerp_movement)) = query_entity.get(entity) {
+            if lerp_movement.target_translation.is_none() {
+                grid.mark_tiles_from_collider(collider);
+            }
+        }
+    }
+
+    // Filter out entities that still need placement
+    let entities_still_to_place: Vec<_> = object_tool_data
+        .entities_to_place
+        .iter()
+        .filter(|&&entity| {
+            if let Ok((_, lerp_movement)) = query_entity.get(entity) {
+                lerp_movement.target_translation.is_some()
+            } else {
+                true
+            }
+        })
+        .cloned()
+        .collect();
+    object_tool_data.entities_to_place = entities_still_to_place;
+
+    // Handle entities that are to be removed
+    for &entity in &object_tool_data.entities_to_remove {
+        if let Ok((collider, _)) = query_entity.get(entity) {
+            grid.unmark_tiles_from_collider(collider);
+        }
+        commands.entity(entity).despawn_recursive();
+    }
+    object_tool_data.entities_to_remove.clear();
 }

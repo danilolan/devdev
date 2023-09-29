@@ -91,7 +91,7 @@ pub fn handle_destroy(
     if buttons.just_pressed(MouseButton::Left) {
         if let Some(entity) = picking.get_entity::<Building>(collider_query) {
             object_tool_data.set_new_entity_in_tool(entity, &mut commands);
-            object_tool_data.remove_entity_in_world(grid, query_entity, &mut commands);
+            object_tool_data.remove_entity_in_world();
         }
     }
 }

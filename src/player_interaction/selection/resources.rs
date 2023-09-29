@@ -12,6 +12,8 @@ pub struct ObjectToolData {
     pub grid_size: Option<f32>,
     pub current_angle: f32,
     pub angle_step: f32,
+    pub entities_to_place: Vec<Entity>,
+    pub entities_to_remove: Vec<Entity>,
 }
 impl Default for ObjectToolData {
     fn default() -> Self {
@@ -20,6 +22,8 @@ impl Default for ObjectToolData {
             grid_size: Some(0.2),
             current_angle: 0.0,
             angle_step: 90.0,
+            entities_to_place: Vec::new(),
+            entities_to_remove: Vec::new(),
         }
     }
 }
@@ -43,31 +47,17 @@ impl ObjectToolData {
         }
     }
 
-    pub fn place_entity_in_world(
-        &mut self,
-        mut grid: ResMut<Grid>,
-        query_entity: Query<&BoxCollider>,
-    ) {
+    pub fn place_entity_in_world(&mut self) {
         if let Some(entity) = self.entity {
             self.entity = None;
-            if let Ok(collider) = query_entity.get(entity) {
-                grid.mark_tiles_from_collider(collider);
-            }
+            self.entities_to_place.push(entity);
         }
     }
 
-    pub fn remove_entity_in_world(
-        &mut self,
-        mut grid: ResMut<Grid>,
-        query_entity: Query<&BoxCollider>,
-        commands: &mut Commands,
-    ) {
+    pub fn remove_entity_in_world(&mut self) {
         if let Some(entity) = self.entity {
             self.entity = None;
-            commands.entity(entity).despawn_recursive();
-            if let Ok(collider) = query_entity.get(entity) {
-                grid.unmark_tiles_from_collider(collider);
-            }
+            self.entities_to_remove.push(entity)
         }
     }
 }
