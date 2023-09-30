@@ -12,5 +12,7 @@ use states::*;
 pub struct PathfindingPlugin;
 
 impl Plugin for PathfindingPlugin {
-    fn build(&self, app: &mut App) {}
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, handle_pathfinding_tasks);
+    }
 }

@@ -92,9 +92,18 @@ impl Grid {
         self.hashmap.get(&(x, z)).cloned()
     }
 
-    pub fn find_path(&self, start: Vec3, end: Vec3) -> Option<Vec<Vec3>> {
-        let start_index = array_to_tuple(self.world_to_coord(start));
-        let end_index = array_to_tuple(self.world_to_coord(end));
+    pub fn obstructed(&self, translation: &Vec3) -> bool {
+        let index = self.world_to_coord(*translation);
+
+        match self.hashmap.get(&array_to_tuple(index)) {
+            Some(true) => return true,
+            _ => return false,
+        }
+    }
+
+    pub fn find_path(&self, start: &Vec3, end: &Vec3) -> Result<Path, PathfindingError> {
+        let start_index = array_to_tuple(self.world_to_coord(*start));
+        let end_index = array_to_tuple(self.world_to_coord(*end));
 
         let neighbors = |&(x, y): &(i32, i32)| {
             vec![(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
@@ -110,25 +119,47 @@ impl Grid {
 
         let distance = |&a: &(i32, i32), &b: &(i32, i32)| (a.0 - b.0).abs() + (a.1 - b.1).abs();
 
-        let heuristic = |&index: &(i32, i32)| distance(&index, &end_index);
+        let heuristic = |&index: &(i32, i32)| distance(&index, &end_index) / 2;
 
-        println!("Antes");
         let solution = astar(&start_index, neighbors, heuristic, |&index| {
             index == end_index
         });
-        println!("Depois");
 
         if let Some((path, _)) = solution {
-            Some(
-                path.into_iter()
+            Ok(Path {
+                steps: path
+                    .into_iter()
                     .map(|index| self.coord_to_tile(index.into()))
                     .collect(),
-            )
+            })
         } else {
-            None
+            Err(PathfindingError {})
         }
     }
 }
+
+pub struct Path {
+    pub steps: Vec<Vec3>,
+}
+
+impl Path {
+    pub fn optimize_corners(&mut self) {
+        // i must be tracked here because vec len changes
+        let mut i = 0;
+        while i + 2 < self.steps.len() {
+            let first_step = &self.steps[i];
+            let third_step = &self.steps[i + 2];
+            //If both x and y change then this is a corner
+            if first_step.x != third_step.x && first_step.y != third_step.y {
+                self.steps.remove(i + 1);
+            }
+            i += 1;
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct PathfindingError;
 
 fn array_to_tuple(arr: [i32; 2]) -> (i32, i32) {
     (arr[0], arr[1])

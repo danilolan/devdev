@@ -1,6 +1,8 @@
 use bevy::prelude::*;
+use bevy_inspector_egui::egui::epaint::tessellator::path;
 
 use crate::{
+    npc::pathfinding::components::{spawn_optimized_pathfinding_task, Pathfinding},
     player_interaction::picking::resources::PickingData,
     world::{
         grid::{self, resources::Grid},
@@ -9,6 +11,8 @@ use crate::{
 };
 
 use super::{resources::ObjectToolData, states::CanPlaceState};
+
+use crate::scene::Player;
 
 pub fn handle_object(
     picking: Res<PickingData>,
@@ -124,15 +128,33 @@ pub fn handle_entities(
     object_tool_data.entities_to_remove.clear();
 }
 
-pub fn show_path(grid: Res<Grid>, mut gizmos: Gizmos, keyboard_input: Res<Input<KeyCode>>) {
+pub fn show_path(
+    query_entity: Query<Entity, With<Player>>,
+    keyboard_input: Res<Input<KeyCode>>,
+    mut commands: Commands,
+    grid: Res<Grid>,
+    mut gizmos: Gizmos,
+    pathfinding_query: Query<&Pathfinding, With<Player>>,
+) {
     if keyboard_input.pressed(KeyCode::F) {
-        let result = grid.find_path(Vec3::new(0.0, 0.0, 0.0), Vec3::new(50.0, 50.0, 50.0));
-        if let Some(path) = result {
-            for i in 0..path.len() {
-                if i == path.len() - 1 {
+        if let Ok(entity) = query_entity.get_single() {
+            spawn_optimized_pathfinding_task(
+                &mut commands,
+                entity,
+                &grid,
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(50.0, 0.0, 50.0),
+            );
+        }
+    }
+
+    if let Ok(pathfinding) = pathfinding_query.get_single() {
+        if let Some(path) = &pathfinding.path {
+            for i in 0..path.steps.len() {
+                if i == path.steps.len() - 1 {
                     break;
                 }
-                gizmos.line(path[i], path[i + 1], Color::BLUE)
+                gizmos.line(path.steps[i], path.steps[i + 1], Color::BLUE)
             }
         }
     }
