@@ -59,6 +59,7 @@ pub fn rotate_object(
 pub fn place_object(
     mut object_tool_data: ResMut<ObjectToolData>,
     buttons: Res<Input<MouseButton>>,
+    grid: Res<Grid>,
 ) {
     if buttons.just_pressed(MouseButton::Left) {
         object_tool_data.place_entity_in_world();
@@ -121,4 +122,18 @@ pub fn handle_entities(
         commands.entity(entity).despawn_recursive();
     }
     object_tool_data.entities_to_remove.clear();
+}
+
+pub fn show_path(grid: Res<Grid>, mut gizmos: Gizmos, keyboard_input: Res<Input<KeyCode>>) {
+    if keyboard_input.pressed(KeyCode::F) {
+        let result = grid.find_path(Vec3::new(0.0, 0.0, 0.0), Vec3::new(50.0, 50.0, 50.0));
+        if let Some(path) = result {
+            for i in 0..path.len() {
+                if i == path.len() - 1 {
+                    break;
+                }
+                gizmos.line(path[i], path[i + 1], Color::BLUE)
+            }
+        }
+    }
 }

@@ -1,13 +1,10 @@
 use bevy::prelude::*;
 
-mod pathfinding;
-use pathfinding::*;
-
 pub struct NpcPlugin;
 
 impl Plugin for NpcPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(PathfindingPlugin);
+        // app.add_plugins(PathfindingPlugin);
     }
 }
 
