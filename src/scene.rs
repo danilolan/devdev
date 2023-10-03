@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::npc::pathfinding::components::Pathfinding;
+
 pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
@@ -33,15 +35,20 @@ pub fn spawn_scene(
     });
 
     commands
-        .spawn(
-            (SceneBundle {
+        .spawn((
+            SceneBundle {
                 scene: window.clone(),
                 transform: Transform {
                     translation: Vec3::new(0.5, 0.0, 0.25),
                     ..Default::default()
                 },
                 ..Default::default()
-            }),
-        )
+            },
+            Player {},
+            Pathfinding::default(),
+        ))
         .insert(Name::from("window".to_string()));
 }
+
+#[derive(Component)]
+pub struct Player {}

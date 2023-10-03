@@ -106,20 +106,29 @@ impl Grid {
         let end_index = array_to_tuple(self.world_to_coord(*end));
 
         let neighbors = |&(x, y): &(i32, i32)| {
-            vec![(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
-                .into_iter()
-                .filter_map(|index| {
-                    match self.hashmap.get(&index) {
-                        Some(true) => None,    // Tile obstruído
-                        _ => Some((index, 1)), // Tile não obstruído ou não presente no hashmap
-                    }
-                })
-                .collect::<Vec<_>>()
+            vec![
+                (x - 1, y),     // Esquerda
+                (x + 1, y),     // Direita
+                (x, y - 1),     // Abaixo
+                (x, y + 1),     // Acima
+                (x - 1, y - 1), // Diagonal inferior esquerda
+                (x + 1, y - 1), // Diagonal inferior direita
+                (x - 1, y + 1), // Diagonal superior esquerda
+                (x + 1, y + 1), // Diagonal superior direita
+            ]
+            .into_iter()
+            .filter_map(|index| {
+                match self.hashmap.get(&index) {
+                    Some(true) => None,    // Tile obstruído
+                    _ => Some((index, 1)), // Tile não obstruído ou não presente no hashmap
+                }
+            })
+            .collect::<Vec<_>>()
         };
 
         let distance = |&a: &(i32, i32), &b: &(i32, i32)| (a.0 - b.0).abs() + (a.1 - b.1).abs();
 
-        let heuristic = |&index: &(i32, i32)| distance(&index, &end_index) / 2;
+        let heuristic = |&index: &(i32, i32)| distance(&index, &end_index);
 
         let solution = astar(&start_index, neighbors, heuristic, |&index| {
             index == end_index
