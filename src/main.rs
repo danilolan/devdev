@@ -105,14 +105,14 @@ use scene::ScenePlugin;
 
 fn main() {
     App::new()
-        // Window Setup
+        //-- Window Setup
         .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
         .add_plugins(DefaultPlugins)
         .add_plugins(WorldInspectorPlugin::new())
-        //fps
-        .add_plugins(FrameTimeDiagnosticsPlugin::default())
-        .add_plugins(LogDiagnosticsPlugin::default())
-        //Plugins
+        //-- Fps
+        //.add_plugins(FrameTimeDiagnosticsPlugin::default())
+        //.add_plugins(LogDiagnosticsPlugin::default())
+        //-- Plugins
         .add_plugins(PlayerInteractionPlugin)
         .add_plugins(WorldPlugin)
         .add_plugins(NpcPlugin)

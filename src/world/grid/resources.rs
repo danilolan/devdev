@@ -100,35 +100,53 @@ impl Grid {
             _ => return false,
         }
     }
-
     pub fn find_path(&self, start: &Vec3, end: &Vec3) -> Result<Path, PathfindingError> {
+        const MAX_ITERATIONS: i32 = 100000;
+        const STRAIGHT_COST: i32 = 1;
+        const DIAGONAL_COST: i32 = 2;
+
+        if self.obstructed(start) || self.obstructed(end) {
+            return Err(PathfindingError {});
+        }
+
         let start_index = array_to_tuple(self.world_to_coord(*start));
         let end_index = array_to_tuple(self.world_to_coord(*end));
 
+        let mut iterations = 0;
+
         let neighbors = |&(x, y): &(i32, i32)| {
+            iterations += 1;
+            if iterations > MAX_ITERATIONS {
+                return vec![];
+            }
+
+            println!("{}", iterations);
             vec![
-                (x - 1, y),     // Esquerda
-                (x + 1, y),     // Direita
-                (x, y - 1),     // Abaixo
-                (x, y + 1),     // Acima
-                (x - 1, y - 1), // Diagonal inferior esquerda
-                (x + 1, y - 1), // Diagonal inferior direita
-                (x - 1, y + 1), // Diagonal superior esquerda
-                (x + 1, y + 1), // Diagonal superior direita
+                ((x - 1, y), STRAIGHT_COST),     // left
+                ((x + 1, y), STRAIGHT_COST),     // right
+                ((x, y - 1), STRAIGHT_COST),     // down
+                ((x, y + 1), STRAIGHT_COST),     // up
+                ((x - 1, y - 1), DIAGONAL_COST), // down left
+                ((x + 1, y - 1), DIAGONAL_COST), // down right
+                ((x - 1, y + 1), DIAGONAL_COST), // up left
+                ((x + 1, y + 1), DIAGONAL_COST), // up right
             ]
             .into_iter()
-            .filter_map(|index| {
+            .filter_map(|(index, cost)| {
                 match self.hashmap.get(&index) {
-                    Some(true) => None,    // Tile obstruído
-                    _ => Some((index, 1)), // Tile não obstruído ou não presente no hashmap
+                    Some(true) => None,       // Tile obstruído
+                    _ => Some((index, cost)), // Tile não obstruído ou não presente no hashmap
                 }
             })
             .collect::<Vec<_>>()
         };
 
-        let distance = |&a: &(i32, i32), &b: &(i32, i32)| (a.0 - b.0).abs() + (a.1 - b.1).abs();
+        let heuristic = |&index: &(i32, i32)| {
+            let dx = (index.0 - end_index.0).abs();
+            let dy = (index.1 - end_index.1).abs();
 
-        let heuristic = |&index: &(i32, i32)| distance(&index, &end_index);
+            STRAIGHT_COST * (dx + dy) + (DIAGONAL_COST - 2 * STRAIGHT_COST) * dx.min(dy)
+        };
 
         let solution = astar(&start_index, neighbors, heuristic, |&index| {
             index == end_index

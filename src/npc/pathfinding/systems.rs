@@ -14,6 +14,8 @@ pub fn handle_pathfinding_tasks(
             if let Ok(mut pathfinding) = pathfinding_query.get_mut(task_entity) {
                 if let Ok(path) = result {
                     pathfinding.path = Some(path);
+                } else {
+                    println!("ERRO CAMINHO NÂO ENCONTRADO")
                 }
             }
         }
