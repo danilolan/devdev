@@ -143,7 +143,7 @@ pub fn show_path(
                 entity,
                 &grid,
                 Vec3::new(0.0, 0.0, 0.0),
-                Vec3::new(50.0, 0.0, 50.0),
+                Vec3::new(5.0, 0.0, 0.0),
             );
         }
     }

@@ -1,3 +1,7 @@
+//! Handle the pathfinding data attached to an entity
+//!
+//! The actual pathfinding calculation is in Grid module. This modules handles the async tasks and the data returned by this tasks.
+
 use bevy::prelude::*;
 
 pub mod systems;

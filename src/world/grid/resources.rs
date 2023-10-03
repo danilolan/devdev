@@ -101,7 +101,7 @@ impl Grid {
         }
     }
     pub fn find_path(&self, start: &Vec3, end: &Vec3) -> Result<Path, PathfindingError> {
-        const MAX_ITERATIONS: i32 = 100000;
+        const MAX_ITERATIONS: i32 = 1000;
         const STRAIGHT_COST: i32 = 1;
         const DIAGONAL_COST: i32 = 2;
 

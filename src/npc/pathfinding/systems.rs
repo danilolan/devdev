@@ -3,6 +3,7 @@ use futures_lite::future;
 
 use super::components::{Pathfinding, PathfindingTask};
 
+/// Get the all the PathfindigTask components and verify if each one has already ended. If succeed atach the returned path to the pathfinding component.
 pub fn handle_pathfinding_tasks(
     mut commands: Commands,
     mut pathfinding_query: Query<&mut Pathfinding>,
@@ -15,7 +16,7 @@ pub fn handle_pathfinding_tasks(
                 if let Ok(path) = result {
                     pathfinding.path = Some(path);
                 } else {
-                    println!("ERRO CAMINHO NÂO ENCONTRADO")
+                    error!("No path was found the {:?} entity", task_entity);
                 }
             }
         }
