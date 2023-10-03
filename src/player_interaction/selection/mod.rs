@@ -26,5 +26,7 @@ impl Plugin for SelectionPlugin {
         app.add_systems(Update, rotate_object);
         app.add_systems(Update, handle_can_place_state);
         app.add_systems(Update, place_object.run_if(in_state(CanPlaceState::True)));
+        app.add_systems(Update, handle_entities);
+        app.add_systems(Update, show_path);
     }
 }

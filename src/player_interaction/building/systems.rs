@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     player_interaction::{picking::resources::PickingData, selection::resources::ObjectToolData},
-    world::physics::components::BoxCollider,
+    world::{grid::resources::Grid, physics::components::BoxCollider},
 };
 
 use super::{components::Building, states::BuildingState};
@@ -20,23 +20,23 @@ pub fn handle_states(
     mut commands: Commands,
 ) {
     if keys.just_pressed(WALL_KEY) {
-        object_tool_data.delete_entity(&mut commands);
+        object_tool_data.delete_entity_in_tool(&mut commands);
         building_state.set(BuildingState::Wall);
     }
     if keys.just_released(PILLAR_KEY) {
-        object_tool_data.delete_entity(&mut commands);
+        object_tool_data.delete_entity_in_tool(&mut commands);
         building_state.set(BuildingState::Pillar);
     }
     if keys.pressed(WINDOW_KEY) {
-        object_tool_data.delete_entity(&mut commands);
+        object_tool_data.delete_entity_in_tool(&mut commands);
         building_state.set(BuildingState::Window);
     }
     if keys.pressed(DOOR_KEY) {
-        object_tool_data.delete_entity(&mut commands);
+        object_tool_data.delete_entity_in_tool(&mut commands);
         building_state.set(BuildingState::Door);
     }
     if keys.pressed(DESTROY_KEY) {
-        object_tool_data.delete_entity(&mut commands);
+        object_tool_data.delete_entity_in_tool(&mut commands);
         building_state.set(BuildingState::Destroy);
     }
 }
@@ -76,7 +76,7 @@ pub fn spawn_asset(
         rotation: Quat::default(),
     });
 
-    object_tool_data.set_new_entity(entity, &mut commands);
+    object_tool_data.set_new_entity_in_tool(entity, &mut commands);
 }
 
 pub fn handle_destroy(
@@ -84,10 +84,14 @@ pub fn handle_destroy(
     mut picking: Res<PickingData>,
     collider_query: Query<(Entity, &BoxCollider), With<Building>>,
     buttons: Res<Input<MouseButton>>,
+    mut object_tool_data: ResMut<ObjectToolData>,
+    mut grid: ResMut<Grid>,
+    query_entity: Query<&BoxCollider>,
 ) {
     if buttons.just_pressed(MouseButton::Left) {
         if let Some(entity) = picking.get_entity::<Building>(collider_query) {
-            commands.entity(entity).despawn_recursive();
+            object_tool_data.set_new_entity_in_tool(entity, &mut commands);
+            object_tool_data.remove_entity_in_world();
         }
     }
 }

@@ -132,7 +132,7 @@ impl BoxCollider {
     }
 
     /// Computes the corners of the BoxCollider
-    fn get_corners(&self) -> [Vec3; 8] {
+    pub fn get_corners(&self) -> [Vec3; 8] {
         let half_extents = self.scale * 0.5;
         let rot_matrix = Mat3::from_quat(self.rotation);
 
@@ -147,6 +147,18 @@ impl BoxCollider {
         }
 
         corners
+    }
+
+    pub fn is_colliding_with_tile(&self, tile_collider: &BoxCollider) -> bool {
+        let axes_a = self.get_axes();
+        let axes_b = tile_collider.get_axes();
+
+        for axis in axes_a.iter().chain(axes_b.iter()) {
+            if !self.projections_overlap(tile_collider, *axis, 0.0) {
+                return false; // Projections do not overlap along this axis
+            }
+        }
+        true // If we get here, the BoxCollider is colliding with the tile
     }
 }
 

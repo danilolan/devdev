@@ -1,11 +1,18 @@
 use bevy::prelude::*;
+use bevy_inspector_egui::egui::epaint::tessellator::path;
 
 use crate::{
+    npc::pathfinding::components::{spawn_optimized_pathfinding_task, Pathfinding},
     player_interaction::picking::resources::PickingData,
-    world::physics::components::{BoxCollider, LerpMovement},
+    world::{
+        grid::{self, resources::Grid},
+        physics::components::{BoxCollider, LerpMovement},
+    },
 };
 
 use super::{resources::ObjectToolData, states::CanPlaceState};
+
+use crate::scene::Player;
 
 pub fn handle_object(
     picking: Res<PickingData>,
@@ -56,9 +63,10 @@ pub fn rotate_object(
 pub fn place_object(
     mut object_tool_data: ResMut<ObjectToolData>,
     buttons: Res<Input<MouseButton>>,
+    grid: Res<Grid>,
 ) {
     if buttons.just_pressed(MouseButton::Left) {
-        object_tool_data.entity = None;
+        object_tool_data.place_entity_in_world();
     }
 }
 
@@ -77,6 +85,77 @@ pub fn handle_can_place_state(
             }
         } else {
             can_place_state.set(CanPlaceState::True)
+        }
+    }
+}
+pub fn handle_entities(
+    mut object_tool_data: ResMut<ObjectToolData>,
+    mut grid: ResMut<Grid>,
+    query_entity: Query<(&BoxCollider, &LerpMovement), With<BoxCollider>>,
+    mut commands: Commands,
+) {
+    // Mark tiles for entities that are to be placed
+    for &entity in &object_tool_data.entities_to_place {
+        if let Ok((collider, lerp_movement)) = query_entity.get(entity) {
+            if lerp_movement.target_translation.is_none() {
+                grid.mark_tiles_from_collider(collider);
+            }
+        }
+    }
+
+    // Filter out entities that still need placement
+    let entities_still_to_place: Vec<_> = object_tool_data
+        .entities_to_place
+        .iter()
+        .filter(|&&entity| {
+            if let Ok((_, lerp_movement)) = query_entity.get(entity) {
+                lerp_movement.target_translation.is_some()
+            } else {
+                true
+            }
+        })
+        .cloned()
+        .collect();
+    object_tool_data.entities_to_place = entities_still_to_place;
+
+    // Handle entities that are to be removed
+    for &entity in &object_tool_data.entities_to_remove {
+        if let Ok((collider, _)) = query_entity.get(entity) {
+            grid.unmark_tiles_from_collider(collider);
+        }
+        commands.entity(entity).despawn_recursive();
+    }
+    object_tool_data.entities_to_remove.clear();
+}
+
+pub fn show_path(
+    query_entity: Query<Entity, With<Player>>,
+    keyboard_input: Res<Input<KeyCode>>,
+    mut commands: Commands,
+    grid: Res<Grid>,
+    mut gizmos: Gizmos,
+    pathfinding_query: Query<&Pathfinding, With<Player>>,
+) {
+    if keyboard_input.pressed(KeyCode::F) {
+        if let Ok(entity) = query_entity.get_single() {
+            spawn_optimized_pathfinding_task(
+                &mut commands,
+                entity,
+                &grid,
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(5.0, 0.0, 0.0),
+            );
+        }
+    }
+
+    if let Ok(pathfinding) = pathfinding_query.get_single() {
+        if let Some(path) = &pathfinding.path {
+            for i in 0..path.steps.len() {
+                if i == path.steps.len() - 1 {
+                    break;
+                }
+                gizmos.line(path.steps[i], path.steps[i + 1], Color::BLUE)
+            }
         }
     }
 }
