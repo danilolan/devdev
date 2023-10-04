@@ -103,6 +103,8 @@ use npc::NpcPlugin;
 mod scene;
 use scene::ScenePlugin;
 
+pub mod asset_manager;
+use asset_manager::AssetManagerPlugin;
 fn main() {
     App::new()
         //-- Window Setup
@@ -117,5 +119,6 @@ fn main() {
         .add_plugins(WorldPlugin)
         .add_plugins(NpcPlugin)
         .add_plugins(ScenePlugin)
+        .add_plugins(AssetManagerPlugin)
         .run();
 }
