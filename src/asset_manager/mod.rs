@@ -12,5 +12,11 @@ use states::*;
 pub struct AssetManagerPlugin;
 
 impl Plugin for AssetManagerPlugin {
-    fn build(&self, app: &mut App) {}
+    fn build(&self, app: &mut App) {
+        //--resources
+        app.init_resource::<AssetsToLoad>();
+        //--systems
+        app.add_systems(Startup, start_assets);
+        app.add_systems(Update, check_assets_ready);
+    }
 }
