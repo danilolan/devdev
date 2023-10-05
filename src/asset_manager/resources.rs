@@ -1,14 +1,8 @@
-use bevy::{prelude::*, utils::HashMap};
-
-enum AssetType {
-    Image(Handle<Image>),
-    Audio(Handle<AudioSource>),
-    Scene(Handle<DynamicScene>),
-}
+use bevy::{asset::HandleId, prelude::*, utils::HashMap};
 
 pub struct AssetToLoad {
     pub path: String,
-    pub data: HandleUntyped,
+    pub data: AssetType,
 }
 
 #[derive(Resource)]
@@ -25,7 +19,7 @@ impl Default for AssetsToLoad {
 }
 
 impl AssetsToLoad {
-    pub fn insert_asset(&mut self, name: &str, data: HandleUntyped, path: &str) {
+    pub fn insert_asset(&mut self, name: &str, data: AssetType, path: &str) {
         self.assets.insert(
             name.to_string(),
             AssetToLoad {
@@ -39,20 +33,38 @@ impl AssetsToLoad {
         self.assets.remove(name);
     }
 }
-
-pub struct AssetsLoaded {
-    assets: HashMap<String, AssetType>,
+#[derive(Clone)]
+pub enum AssetType {
+    Image(Handle<Image>),
+    Audio(Handle<AudioSource>),
+    Scene(Handle<Scene>),
+}
+impl AssetType {
+    pub fn handle_id(&self) -> HandleId {
+        match self {
+            AssetType::Image(handle) => handle.id(),
+            AssetType::Audio(handle) => handle.id(),
+            AssetType::Scene(handle) => handle.id(),
+        }
+    }
 }
 
-/* impl AssetsLoaded {
-    pub fn new() -> Self {
-        AssetsLoaded {
+#[derive(Resource)]
+pub struct AssetsLoaded {
+    pub assets: HashMap<String, AssetType>,
+}
+
+impl Default for AssetsLoaded {
+    fn default() -> Self {
+        Self {
             assets: HashMap::new(),
         }
     }
+}
 
-    pub fn insert_asset(&mut self, path: String, asset_type: AssetType) {
-        self.assets.insert(path, asset_type);
+impl AssetsLoaded {
+    pub fn insert_asset(&mut self, path: &str, asset_type: AssetType) {
+        self.assets.insert(path.to_string(), asset_type);
     }
 
     pub fn get_asset_image(&self, path: &str) -> Option<&Handle<Image>> {
@@ -61,6 +73,10 @@ pub struct AssetsLoaded {
             _ => None,
         }
     }
-
-    // Você pode adicionar funções semelhantes para outros tipos de ativos
-} */
+    pub fn get_asset_scene(&self, path: &str) -> Option<&Handle<Scene>> {
+        match self.assets.get(path) {
+            Some(AssetType::Scene(handle)) => Some(handle),
+            _ => None,
+        }
+    }
+}

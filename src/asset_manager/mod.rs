@@ -15,6 +15,7 @@ impl Plugin for AssetManagerPlugin {
     fn build(&self, app: &mut App) {
         //--resources
         app.init_resource::<AssetsToLoad>();
+        app.init_resource::<AssetsLoaded>();
         //--systems
         app.add_systems(Startup, start_assets);
         app.add_systems(Update, check_assets_ready);

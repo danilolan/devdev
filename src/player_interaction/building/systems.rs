@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
+    asset_manager::resources::AssetsLoaded,
     player_interaction::{picking::resources::PickingData, selection::resources::ObjectToolData},
     world::{grid::resources::Grid, physics::components::BoxCollider},
 };
@@ -98,16 +99,16 @@ pub fn handle_destroy(
 
 pub fn handle_wall(
     mut commands: Commands,
-    server: Res<AssetServer>,
     mut object_tool_data: ResMut<ObjectToolData>,
     mut picking: Res<PickingData>,
+    assets: ResMut<AssetsLoaded>,
 ) {
-    let wall: Handle<Scene> = server.load("./models/wall.gltf#Scene0");
+    let wall = assets.get_asset_scene("models/building/wall").unwrap();
 
     if object_tool_data.entity.is_none() {
         spawn_asset(
             commands,
-            wall,
+            wall.clone(),
             object_tool_data,
             picking,
             Vec3::new(0.2, 1.7, 1.0),
@@ -117,16 +118,16 @@ pub fn handle_wall(
 
 pub fn handle_window(
     mut commands: Commands,
-    server: Res<AssetServer>,
+    assets: ResMut<AssetsLoaded>,
     mut object_tool_data: ResMut<ObjectToolData>,
     mut picking: Res<PickingData>,
 ) {
-    let window: Handle<Scene> = server.load("./models/window.gltf#Scene0");
+    let window = assets.get_asset_scene("models/building/window").unwrap();
 
     if object_tool_data.entity.is_none() {
         spawn_asset(
             commands,
-            window,
+            window.clone(),
             object_tool_data,
             picking,
             Vec3::new(0.2, 1., 1.0),
