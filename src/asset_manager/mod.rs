@@ -1,3 +1,5 @@
+//! Load all assets and provides a resouce to acess this assets.
+
 use bevy::prelude::*;
 
 pub mod systems;

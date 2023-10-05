@@ -19,7 +19,7 @@ impl Default for AssetsToLoad {
 }
 
 impl AssetsToLoad {
-    pub fn insert_asset(&mut self, name: &str, data: AssetType, path: &str) {
+    pub fn insert_asset(&mut self, name: String, data: AssetType, path: String) {
         self.assets.insert(
             name.to_string(),
             AssetToLoad {
@@ -67,16 +67,22 @@ impl AssetsLoaded {
         self.assets.insert(path.to_string(), asset_type);
     }
 
-    pub fn get_asset_image(&self, path: &str) -> Option<&Handle<Image>> {
+    pub fn get_asset_image(&self, path: &str) -> &Handle<Image> {
         match self.assets.get(path) {
-            Some(AssetType::Image(handle)) => Some(handle),
-            _ => None,
+            Some(AssetType::Image(handle)) => handle,
+            _ => panic!("The image in path: {} was not found", path),
         }
     }
-    pub fn get_asset_scene(&self, path: &str) -> Option<&Handle<Scene>> {
+    pub fn get_asset_scene(&self, path: &str) -> &Handle<Scene> {
         match self.assets.get(path) {
-            Some(AssetType::Scene(handle)) => Some(handle),
-            _ => None,
+            Some(AssetType::Scene(handle)) => handle,
+            _ => panic!("The scene in path: {} was not found", path),
+        }
+    }
+    pub fn get_asset_audio(&self, path: &str) -> &Handle<AudioSource> {
+        match self.assets.get(path) {
+            Some(AssetType::Audio(handle)) => handle,
+            _ => panic!("The audio in path: {} was not found", path),
         }
     }
 }

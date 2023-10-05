@@ -1,25 +1,62 @@
-use bevy::prelude::*;
-
-use crate::asset_manager::resources::AssetType;
-
 use super::resources::{AssetsLoaded, AssetsToLoad};
-
-pub fn start_assets(asset_server: Res<AssetServer>, mut assets_to_load: ResMut<AssetsToLoad>) {
-    let wall: Handle<Scene> = asset_server.load("./models/wall.gltf#Scene0");
-    assets_to_load.insert_asset(
-        "models/building/wall",
-        AssetType::Scene(wall.clone()),
-        "./models/wall.gltf#Scene0",
-    );
-
-    let window: Handle<Scene> = asset_server.load("./models/window.gltf#Scene0");
-    assets_to_load.insert_asset(
-        "models/building/window",
-        AssetType::Scene(window.clone()),
-        "./models/window.gltf#Scene0",
-    );
+use crate::asset_manager::resources::AssetType;
+use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
+use std::fs::File;
+#[derive(Deserialize)]
+pub struct Asset {
+    pub path: String,
+    pub name: String,
+}
+#[derive(Deserialize)]
+pub struct AssetsConfig {
+    pub scene: Vec<Asset>,
+    pub image: Vec<Asset>,
+    pub audio: Vec<Asset>,
 }
 
+/// Load the json file of the assets config
+pub fn load_asset_config(path: &str) -> AssetsConfig {
+    let file = File::open(path).expect("Failed to open asset config");
+    serde_json::from_reader(file).expect("Error while reading json")
+}
+
+/// Start the loading assets.
+///
+/// Load assets by the asset_server from bevy and push them to [AssetsToLoad] resource to track the state
+pub fn start_assets(asset_server: Res<AssetServer>, mut assets_to_load: ResMut<AssetsToLoad>) {
+    let config = load_asset_config("./config/assets.json");
+
+    for scene in config.scene {
+        let handle_scene: Handle<Scene> = asset_server.load(scene.path.clone());
+        assets_to_load.insert_asset(
+            scene.name.clone(),
+            AssetType::Scene(handle_scene),
+            scene.path.clone(),
+        );
+    }
+
+    for image in config.image {
+        let handle_image: Handle<Image> = asset_server.load(image.path.clone());
+        assets_to_load.insert_asset(
+            image.name.clone(),
+            AssetType::Image(handle_image),
+            image.path.clone(),
+        );
+    }
+    for audio in config.audio {
+        let handle_audio: Handle<AudioSource> = asset_server.load(audio.path.clone());
+        assets_to_load.insert_asset(
+            audio.name.clone(),
+            AssetType::Audio(handle_audio),
+            audio.path.clone(),
+        );
+    }
+}
+
+/// Check the state of assets in [AssetsToLoad] resource.
+///
+/// If assets was loaded push it to the [AssetsLoaded]
 pub fn check_assets_ready(
     server: Res<AssetServer>,
     mut assets_to_load: ResMut<AssetsToLoad>,

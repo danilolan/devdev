@@ -103,7 +103,7 @@ pub fn handle_wall(
     mut picking: Res<PickingData>,
     assets: ResMut<AssetsLoaded>,
 ) {
-    let wall = assets.get_asset_scene("models/building/wall").unwrap();
+    let wall = assets.get_asset_scene("scene/building/wall");
 
     if object_tool_data.entity.is_none() {
         spawn_asset(
@@ -122,7 +122,7 @@ pub fn handle_window(
     mut object_tool_data: ResMut<ObjectToolData>,
     mut picking: Res<PickingData>,
 ) {
-    let window = assets.get_asset_scene("models/building/window").unwrap();
+    let window = assets.get_asset_scene("scene/building/window");
 
     if object_tool_data.entity.is_none() {
         spawn_asset(
@@ -137,16 +137,16 @@ pub fn handle_window(
 
 pub fn handle_pillar(
     mut commands: Commands,
-    server: Res<AssetServer>,
+    assets: ResMut<AssetsLoaded>,
     mut object_tool_data: ResMut<ObjectToolData>,
     mut picking: Res<PickingData>,
 ) {
-    let wall: Handle<Scene> = server.load("./models/pillar.gltf#Scene0");
+    let pillar = assets.get_asset_scene("scene/building/pillar");
 
     if object_tool_data.entity.is_none() {
         spawn_asset(
             commands,
-            wall,
+            pillar.clone(),
             object_tool_data,
             picking,
             Vec3::new(0.2, 1.7, 0.2),
@@ -156,16 +156,16 @@ pub fn handle_pillar(
 
 pub fn handle_door(
     mut commands: Commands,
-    server: Res<AssetServer>,
+    assets: ResMut<AssetsLoaded>,
     mut object_tool_data: ResMut<ObjectToolData>,
     mut picking: Res<PickingData>,
 ) {
-    let wall: Handle<Scene> = server.load("./models/pillar.gltf#Scene0");
+    let door = assets.get_asset_scene("scene/building/door");
 
     if object_tool_data.entity.is_none() {
         spawn_asset(
             commands,
-            wall,
+            door.clone(),
             object_tool_data,
             picking,
             Vec3::new(0.2, 1., 1.0),
