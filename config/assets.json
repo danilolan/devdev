@@ -1,0 +1,18 @@
+{
+    "scene": [
+        {
+            "path": "./scene/wall.gltf#Scene0",
+            "name": "scene/building/wall"
+        },
+        {
+            "path": "./scene/window.gltf#Scene0",
+            "name": "scene/building/window"
+        },
+        {
+            "path": "./scene/pillar.gltf#Scene0",
+            "name": "scene/building/pillar"
+        }
+    ],
+    "image": [],
+    "audio": []
+}
