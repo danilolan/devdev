@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use super::behavior::states::BehaviorState;
 /// needs is the basic needs of the npc
 /// Atributtes is the rpg atributtes for the npc that will use to calc your performance
 /// experience grind is calculated using the formula: (level/xp_factor) ^ xp_power
@@ -13,6 +14,10 @@ pub struct Npc {
 
     xp_power: f32,
     xp_factor: f32,
+
+    pub behavior_state: BehaviorState,
+    pub movement_speed: f32,
+    pub rotation_speed: f32,
 }
 
 const XP_FACTOR: f32 = 0.1;
@@ -21,6 +26,9 @@ const XP_POWER: f32 = 2.0;
 impl Default for Npc {
     fn default() -> Self {
         Npc {
+            behavior_state: BehaviorState::Idle,
+            movement_speed: 0.5,
+            rotation_speed: 15.0,
             experience: 0,
             level: 0,
             role: Role::None,

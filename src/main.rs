@@ -1,3 +1,4 @@
+#![allow(unused)]
 //! A tycoon game that you managing a Software Company.
 //!
 //! # About
