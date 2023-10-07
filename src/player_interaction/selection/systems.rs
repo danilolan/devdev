@@ -4,6 +4,7 @@ use bevy_inspector_egui::egui::epaint::tessellator::path;
 use crate::{
     npc::pathfinding::components::{spawn_optimized_pathfinding_task, Pathfinding},
     player_interaction::picking::resources::PickingData,
+    spawner::npc::NpcSpawner,
     world::{
         grid::{self, resources::Grid},
         physics::components::{BoxCollider, LerpMovement},
@@ -129,26 +130,27 @@ pub fn handle_entities(
 }
 
 pub fn show_path(
-    query_entity: Query<Entity, With<Player>>,
+    query_entity: Query<Entity, With<Pathfinding>>,
     keyboard_input: Res<Input<KeyCode>>,
     mut commands: Commands,
     grid: Res<Grid>,
     mut gizmos: Gizmos,
-    pathfinding_query: Query<&Pathfinding, With<Player>>,
+    pathfinding_query: Query<&Pathfinding>,
 ) {
-    if keyboard_input.pressed(KeyCode::F) {
+    if keyboard_input.just_pressed(KeyCode::F) {
+        commands.add(NpcSpawner {});
         if let Ok(entity) = query_entity.get_single() {
             spawn_optimized_pathfinding_task(
                 &mut commands,
                 entity,
                 &grid,
                 Vec3::new(0.0, 0.0, 0.0),
-                Vec3::new(5.0, 0.0, 0.0),
+                Vec3::new(5.0, 0.0, 5.0),
             );
         }
     }
 
-    if let Ok(pathfinding) = pathfinding_query.get_single() {
+    for (pathfinding) in pathfinding_query.iter() {
         if let Some(path) = &pathfinding.path {
             for i in 0..path.steps.len() {
                 if i == path.steps.len() - 1 {

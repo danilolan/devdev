@@ -9,11 +9,15 @@ use crate::world::grid::resources::{Grid, Path, PathfindingError};
 #[derive(Component)]
 pub struct Pathfinding {
     pub path: Option<Path>,
+    pub current_step: usize,
 }
 
 impl Default for Pathfinding {
     fn default() -> Self {
-        Self { path: None }
+        Self {
+            path: None,
+            current_step: 0,
+        }
     }
 }
 

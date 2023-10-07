@@ -1,3 +1,4 @@
+#![allow(unused)]
 //! A tycoon game that you managing a Software Company.
 //!
 //! # About
@@ -105,6 +106,9 @@ use scene::ScenePlugin;
 
 pub mod asset_manager;
 use asset_manager::AssetManagerPlugin;
+
+pub mod spawner;
+use spawner::*;
 fn main() {
     App::new()
         //-- Window Setup
