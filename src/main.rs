@@ -105,6 +105,9 @@ use scene::ScenePlugin;
 
 pub mod asset_manager;
 use asset_manager::AssetManagerPlugin;
+
+pub mod spawner;
+use spawner::*;
 fn main() {
     App::new()
         //-- Window Setup
